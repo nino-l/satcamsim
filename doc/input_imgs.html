@@ -1,0 +1,2321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>satcamsim.input_imgs API documentation</title>
+<meta name="description" content="Provides processor classes for reading and processing input data, and localizing GCPs." />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>satcamsim.input_imgs</code></h1>
+</header>
+<section id="section-intro">
+<p>Provides processor classes for reading and processing input data, and localizing GCPs.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;Provides processor classes for reading and processing input data, and localizing GCPs.&#34;&#34;&#34;
+
+import numpy as np
+import rasterio
+from rasterio import features, windows
+from itertools import product
+from shapely.geometry import Point, Polygon
+from shapely.ops import unary_union
+from os import listdir
+import pyproj
+import csv
+
+
+class Feature_finder:
+    &#34;&#34;&#34;Find position of point features in simulated line scan image.
+
+    The .csv containing 2D GCPs must have the format: `id,X,Y`.
+
+    The .csv containing 3D GCPs must have the format: `id,X,Y,Z`.&#34;&#34;&#34;
+
+    def __init__(self):
+        self.names_2D = np.array([], dtype=object)
+        self.points_2D = np.array([], dtype=object)
+        self.coords_2D = np.empty((0, 2), dtype=float)
+
+        self.names_3D = np.array([], dtype=object)
+        self.points_3D = np.array([], dtype=object)
+        self.coords_3D = np.empty((0, 3), dtype=float)
+
+        self.Z_terrain = 0
+        self.buffer = 0
+        return
+
+    def from_config(config):
+        &#34;&#34;&#34;
+        Initialize Feature_finder with config parameters.
+
+        Parameters
+        ----------
+        config : Config
+            Config instance containing desired parameters.
+
+        Returns
+        -------
+        finder : Feature_finder
+            initizialized Feature_finder instance.
+
+        &#34;&#34;&#34;
+        if not config[&#39;FIND_FEATURES&#39;]:
+            return None
+
+        finder = Feature_finder()
+        finder.Z_terrain = config[&#39;MEAN_TERRAIN_HEIGHT&#39;]
+
+        if config[&#39;FEATURE_CSV_PATH_2D&#39;]:
+            filepath = config[&#39;FEATURE_CSV_PATH_2D&#39;]
+
+            name_list = []
+            coord_list = []
+            point_list = []
+            with open(filepath) as file:
+                csv_reader = csv.reader(file)
+                for row in csv_reader:
+                    name_list.append(str(row[0]))
+                    coords = (float(row[1]), float(row[2]))
+                    point_list.append(Point(coords))
+                    coord_list.append(coords)
+
+            coord_list, point_list, name_list = zip(*sorted(zip(coord_list, point_list, name_list)))
+
+            finder.coords_2D = np.array(coord_list)
+            finder.names_2D = np.empty(len(name_list), dtype=object)
+            finder.points_2D = np.empty(len(point_list), dtype=type(Point))
+            for idx, (point, name) in enumerate(zip(point_list, name_list)):
+                finder.points_2D[idx] = point
+                finder.names_2D[idx] = name
+
+        if config[&#39;FEATURE_CSV_PATH_3D&#39;]:
+            filepath = config[&#39;FEATURE_CSV_PATH_3D&#39;]
+
+            # read in 3D GCPs
+            name_list = []
+            coord_list = []
+            point_list = []
+            with open(filepath) as file:
+                csv_reader = csv.reader(file)
+                for row in csv_reader:
+                    name_list.append(str(row[0]))
+                    coords = (float(row[1]), float(row[2]), float(row[3]))
+                    point_list.append(Point(coords))
+                    coord_list.append(coords)
+
+            coord_list, point_list, name_list = zip(*sorted(zip(coord_list, point_list, name_list)))
+
+            finder.coords_3D = np.array(coord_list)     # fill array of point coordinates
+            finder.names_3D = np.empty(len(name_list), dtype=object)
+            finder.points_3D = np.empty(len(point_list), dtype=type(Point))
+            for idx, (point, name) in enumerate(zip(point_list, name_list)):
+                finder.points_3D[idx] = point           # fill array of Point objects
+                finder.names_3D[idx] = name             # fill array of point names/identifiers as str
+
+            approx_view_angle = np.deg2rad(config[&#39;APPROX_VIEW_ANGLE&#39;])
+            max_roll = np.deg2rad(config[&#39;MAX_ROLL_ANGLE&#39;])
+
+            # buffer to determine radius within which distorted 3D points may be found
+            finder.buffer = np.max(np.abs(finder.coords_3D[:, 2] - finder.Z_terrain)) * np.tan(0.5 * approx_view_angle + max_roll)
+        return finder
+
+    def check(self, poly, vertices, line_idx, px_idx, sensor_name, pose):
+        &#34;&#34;&#34;
+        Check which of the Feature_finder&#39;s GCPs (if any) are contained within a polygon.
+
+        Parameters
+        ----------
+        poly : Polygon
+            Polygon to be checked.
+        line_idx : int
+            current pose.idx.
+        px_idx : int
+            current pixel&#39;s c coordinate.
+        sensor_name : str
+            current sensor&#39;s name.
+        pose : Cam_pose
+            current sensor&#39;s exterior orientation.
+
+        Returns
+        -------
+        found_feats : list[tuple]
+            list containing tuples with (GCP_name, line_idx, px_idx, sensor_name, GCP_X, GCP_Y, GCP_Z) of all GCPs contained in poly.
+            GCPs without Z information are marked with GCP_Z = 999999.
+
+        &#34;&#34;&#34;
+        X_min, Y_min, X_max, Y_max = poly.bounds
+
+        candidate_idxs = self._get_candidates_2D(X_min, Y_min, X_max, Y_max)
+        # create list with tuple of format: (feature_name, row, column, sensor_name, feature_X, feature_Y, 999999)
+        found_feats_2D = [(point_name, line_idx, px_idx, sensor_name, point_coords[0], point_coords[1], 999999) for point_name, point_coords, point in zip(self.names_2D[candidate_idxs], self.coords_2D[candidate_idxs], self.points_2D[candidate_idxs]) if poly.contains(point)]
+
+        candidate_idxs = self._get_candidates_3D(X_min, Y_min, X_max, Y_max)
+        # create list with tuple of format: (feature_name, row, column, sensor_name, feature_X, feature_Y, feature_Z)
+        found_feats_3D = [(point_name, line_idx, px_idx, sensor_name, point_coords[0], point_coords[1], point_coords[2]) for point_name, point_coords, point in zip(self.names_3D[candidate_idxs], self.coords_3D[candidate_idxs], self.points_3D[candidate_idxs]) if self._get_poly_Z(vertices, point_coords[2], pose).contains(point)]
+
+        return found_feats_2D + found_feats_3D
+
+    def _get_candidates_3D(self, X_min, Y_min, X_max, Y_max):
+        &#34;&#34;&#34;Preselect GCPs based on rectangular bounding box and buffer zone.&#34;&#34;&#34;
+        start_idx = np.searchsorted(self.coords_3D[:, 0], X_min - self.buffer)
+        stop_idx = start_idx + np.searchsorted(self.coords_3D[start_idx:, 0], X_max + self.buffer, &#39;right&#39;)
+
+        candidate_idxs = start_idx + np.where(np.logical_and(self.coords_3D[start_idx:stop_idx, 1] &gt;= Y_min - self.buffer, self.coords_3D[start_idx:stop_idx, 1] &lt;= Y_max + self.buffer))[0]
+
+        return candidate_idxs
+
+    def _get_candidates_2D(self, X_min, Y_min, X_max, Y_max):
+        &#34;&#34;&#34;Preselect GCPs based on rectangular bounding box.&#34;&#34;&#34;
+        start_idx = np.searchsorted(self.coords_2D[:, 0], X_min)
+        stop_idx = start_idx + np.searchsorted(self.coords_2D[start_idx:, 0], X_max, &#39;right&#39;)
+
+        candidate_idxs = start_idx + np.where(np.logical_and(self.coords_2D[start_idx:stop_idx, 1] &gt;= Y_min, self.coords_2D[start_idx:stop_idx, 1] &lt;= Y_max))[0]
+
+        return candidate_idxs
+
+    def _get_ray_at_Z(self, point, proj_center, Z):
+        &#34;&#34;&#34;Ray tracing for 3D GCP detection. Returns X, Y position of ray passing through point and proj_center at elevation Z.&#34;&#34;&#34;
+        deltaZ = proj_center[2] - self.Z_terrain
+        deltas = (proj_center[0:2] - point) / deltaZ
+        X, Y = point + deltas * (Z - self.Z_terrain)
+        return X, Y
+
+    def _get_poly_Z(self, vertices, Z, pose):
+        &#34;&#34;&#34;Create new Polygon at a candidate GCP&#39;s Z elevation to determine whether it is inside FOV.&#34;&#34;&#34;
+        new_center = pose.XYZ_0
+        old_center = pose.previous.XYZ_0
+        poly_Z = Polygon([self._get_ray_at_Z(vertices[0], new_center, Z),
+                          self._get_ray_at_Z(vertices[1], old_center, Z),
+                          self._get_ray_at_Z(vertices[2], old_center, Z),
+                          self._get_ray_at_Z(vertices[3], new_center, Z)])
+        return poly_Z
+
+
+class Raster_processor:
+    &#34;&#34;&#34;Facilitate and simplify operations involving raster data used as comparison.&#34;&#34;&#34;
+
+    def __init__(self):
+        self.open_files = dict()
+        return
+
+    def from_config(config, folder_out):
+        &#34;&#34;&#34;
+        Initialize Raster_processor with config parameters.
+
+        Parameters
+        ----------
+        config : Config
+            Config specifying the processor parameters.
+        folder_out : str
+            Path to output folder for the processor.
+
+        Returns
+        -------
+        processor : Raster_processor
+            The initialized processor.
+
+        &#34;&#34;&#34;
+        processor = Raster_processor()
+        processor.gsd_in = config[&#39;GSD_COMP&#39;]
+        processor.folder_in = config[&#39;COMPARE_FOLDER&#39;]
+        processor.filenames = config[&#39;COMP_FILES&#39;]
+
+        # create coordinate reference system
+        processor.crs_DOP = pyproj.CRS(&#34;epsg:25832&#34;)
+
+        processor.folder_out = folder_out
+
+        processor.glue_multipolys = config[&#39;GLUE_MULTIPOLYS&#39;]
+        if processor.glue_multipolys:
+            processor.max_dist_glue = config[&#39;MAX_DIST_GLUE&#39;]
+            processor.max_iter_glue = config[&#39;MAX_ITER_GLUE&#39;]
+            processor.glue_dist = processor.max_dist_glue / processor.max_iter_glue
+
+        return processor
+
+    def __del__(self):
+        &#34;&#34;&#34;
+        Guarantee that all files are closed before deletion.
+
+        Returns
+        -------
+        None.
+
+        &#34;&#34;&#34;
+        for _, file in self.open_files.items():
+            file.close()
+        return
+
+    def __enter__(self):
+        &#34;&#34;&#34;
+        Open comparison files for use in context manager.
+
+        Returns
+        -------
+        self : Raster_processor
+            The Raster_processor instance created for the context manager.
+
+        &#34;&#34;&#34;
+        if not self.filenames:
+            self.filenames = listdir(self.folder_in)
+        for filename in self.filenames:
+            self._open_file(filename)
+
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        &#34;&#34;&#34;
+        Ensure proper closing of all files when exiting context manager.
+
+        Parameters
+        ----------
+        exc_type : exception type or None
+            Type of exception raised within context manager, or None.
+        exc_value : Exception or None
+            The exception raised within context manager, or None.
+        traceback : Traceback or None
+            Traceback object for the raised exception, or None.
+
+        Returns
+        -------
+        None.
+
+        &#34;&#34;&#34;
+        for _, file in self.open_files.items():
+            file.close()
+        return
+
+    def _open_file(self, filename):
+        &#34;&#34;&#34;
+        Open specified files from disk.
+
+        Parameters
+        ----------
+        filename : str
+            name of file to be loaded.
+
+        Returns
+        -------
+        flag : bool
+            True if file was successfully opened, False otherwise.
+
+        &#34;&#34;&#34;
+        if filename not in self.open_files:
+            try:
+                self.open_files[filename] = rasterio.open(self.folder_in + filename)
+            except rasterio.errors.RasterioIOError:     # raised if required file not available
+                print(&#34;\r&#34; + &#34;Warning: File &#34; + filename + &#34; not found!&#34;, end=&#34;&#34;)
+                return False
+        return True
+
+    def read_from_file(self, region_to_cut, file):
+        &#34;&#34;&#34;
+        Reads data contained in the specified region from file.
+
+        Parameters
+        ----------
+        region_to_cut : Polygon
+            Region of interest, in XY object coordinates.
+        file : rasterio.DatasetReader
+            file from which data is to be read.
+
+        Returns
+        -------
+        contained_data : np.ndarray
+            extracted raster data.
+        window_trans : rasterio.affine.Affine
+            transform of the extracted raster data section.
+
+        &#34;&#34;&#34;
+        X_min, Y_min, X_max, Y_max = region_to_cut.bounds
+        poly_window = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file.transform)
+        window_trans = windows.transform(poly_window, file.transform)
+        data = file.read(window=poly_window)
+
+        # determine contained pixels
+        contained = features.rasterize([(region_to_cut, 1)], out_shape=data.shape[1:], fill=0, transform=window_trans)
+        contained_data = np.where(contained, data, 0)
+        return contained_data, window_trans
+
+    def cut_geom(self, geom):
+        &#34;&#34;&#34;
+        Cut and save region of passed-in geometry object from raster data.
+        The specified geometry is cropped to the edges of the raster data, if necessary.
+        Output is saved to the Raster_processor&#39;s folder_out.
+
+        Parameters
+        ----------
+        geom : shapely.geometry object
+            geometry object describing the region to be extracted, in EPSG:25832 coordinates.
+
+        Returns
+        -------
+        None.
+
+        &#34;&#34;&#34;
+        with rasterio.Env() as rio_env:
+            if self.glue_multipolys:
+                geom = self.glue_geoms(geom)    # close small gaps in the coverage
+
+            for filename, file in self.open_files.items():
+                
+                # CRS transformation
+                crs_comp = pyproj.CRS.from_user_input(file.crs)
+                DOP2comp = pyproj.transformer.Transformer.from_crs(self.crs_DOP, crs_comp)
+                
+                # transform geom to comparison data CRS
+                vert_coords_transformed = list(DOP2comp.itransform(geom.exterior.coords))
+                vertices_transformed = [Point(X, Y) for X, Y in vert_coords_transformed]
+                geom_transformed = Polygon(vertices_transformed)
+                
+                # crop region to edges of comparison data
+                X_lo, Y_lo, X_hi, Y_hi = file.bounds
+                region_to_cut = geom_transformed.intersection(Polygon([(X_lo, Y_lo), (X_hi, Y_lo), (X_hi, Y_hi), (X_lo, Y_hi)]))
+
+                # if no overlap exists
+                if not region_to_cut:
+                    continue
+
+                contained_data, window_trans = self.read_from_file(region_to_cut, file)
+                # write to new raster file
+                profile = file.profile
+                profile.update(height=contained_data.shape[1],
+                               width=contained_data.shape[2],
+                               transform=window_trans)
+                with rasterio.open(self.folder_out + &#39;cutout_&#39; + filename, &#39;w&#39;, **profile) as dest:
+                    for idx, band_data in enumerate(contained_data, start=1):
+                        dest.write(band_data, idx)
+        return
+
+    def glue_geoms(self, geom):
+        &#34;&#34;&#34;
+        Dilate a collection of geometries iteratively until its members can be merged into a single Polygon.
+        If a single, non-Polygon geometry object is passed, it is dilated and therefore converted to a Polygon.
+        If not all members can be unified into a single Polygon within the dilation limits, an exception is raised.
+
+        Parameters
+        ----------
+        geom : shapely.geometry object
+            geometry collection or single geometry object.
+
+        Returns
+        -------
+        geom : shapely.geometry object
+            single Polygon, if glueing was successful.
+
+        &#34;&#34;&#34;
+        for _ in range(self.max_iter_glue):
+            if isinstance(geom, Polygon):
+                return geom
+
+            geom = geom.buffer(self.glue_dist, resolution=4, cap_style=3, join_style=3)     # dilate by self.glue_dist
+            geom = unary_union([geom])      # try unifiying all members
+
+        if not isinstance(geom, Polygon):
+            raise ValueError(&#34;Dilation limit reached, geometry could not be unified into a single Polygon&#34;)
+
+
+class DOP_processor:
+    &#34;&#34;&#34;
+    Facilitate and simplify operations involving the input DOPs.
+
+    Parameters
+    ----------
+    bands : tuple of int
+        the band indices to be read from the input data.
+
+    Returns
+    -------
+    dop_processor : DOP_processor
+        a new DOP_processor instance.
+
+    &#34;&#34;&#34;
+
+    def __init__(self):
+        self.open_files = dict()
+        self.available_files = list()
+        return
+
+    def from_config(config):
+        &#34;&#34;&#34;
+        Initialize a new DOP_processor with the parameters specified in config.
+
+        Parameters
+        ----------
+        config : Config
+            Config containing all relevant parameters.
+        bands : tuple of int
+            The relevant band indices of the input data.
+
+        Returns
+        -------
+        processor : DOP_processor
+            The initialized DOP_processor instance.
+
+        &#34;&#34;&#34;
+        processor = DOP_processor()
+        processor.max_open_files = config[&#39;MAX_OPEN_FILES&#39;]
+        processor.folder_in = config[&#39;DOP_FOLDER&#39;]
+        processor.gsd_in = config[&#39;GSD_DOP&#39;]
+        processor.count_R = config[&#39;COUNT_R&#39;]
+        processor.count_C = config[&#39;COUNT_C&#39;]
+        processor.filename_format = config[&#39;FILENAME_FORMAT&#39;]
+
+        processor.DOP_width = processor.count_C * processor.gsd_in
+        processor.DOP_height = processor.count_R * processor.gsd_in
+
+        return processor
+
+    def __del__(self):
+        &#34;&#34;&#34;
+        Guarantee that all files are closed before deletion.
+
+        Returns
+        -------
+        None.
+
+        &#34;&#34;&#34;
+        for _, file in self.open_files.items():
+            file.close()
+        return
+
+    def __enter__(self):
+        &#34;&#34;&#34;
+        Return self for use in context manager.
+
+        Returns
+        -------
+        self : DOP_processor
+            The DOP_processor instance for the context manager.
+
+        &#34;&#34;&#34;
+        self.available_files = listdir(self.folder_in)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        &#34;&#34;&#34;
+        Ensure proper closing of all files when exiting context manager.
+
+        Parameters
+        ----------
+        exc_type : exception type or None
+            Type of exception raised within context manager, or None.
+        exc_value : Exception or None
+            The exception raised within context manager, or None.
+        traceback : Traceback or None
+            Traceback object for the raised exception, or None.
+
+        Returns
+        -------
+        None.
+
+        &#34;&#34;&#34;
+        for _, file in self.open_files.items():
+            file.close()
+        return
+
+    def sample_area(self, corners_obj, bands):
+        &#34;&#34;&#34;
+        Compute mean of raster data within the polygonal area specified by its corners in object coordinates.
+
+        Parameters
+        ----------
+        corners_obj: list of tuple
+            list of (X, Y) coordinate tuples representing polygon corners.
+        bands : tuple of int
+            tuple of the band indices to be read.
+
+        Returns
+        -------
+        flag : bool
+            True if sampling was successful, False otherwise.
+        sample : np.array or None
+            array of shape (n_bands,) containing mean values for each band if sampling was successful, None otherwise.
+        poly : shapely.geometry.Polygon
+            the polygon area that was sampled (=ground track coverage). Returned even if sampling was unsuccessful.
+
+        &#34;&#34;&#34;
+        # create polygon of area of pixel projected onto terrain
+        poly = Polygon(corners_obj)
+
+        is_success, data, data_trans = self.read_data(poly, corners_obj, bands)
+
+        if not is_success:
+            return False, None, poly
+
+        # determine contained input pixels in read-in data
+        contained = features.rasterize([(poly, 1)], out_shape=data.shape[1:], fill=0, transform=data_trans)
+
+        # R_contained, C_contained = np.nonzero(contained)
+        sum_samples = np.where(contained, data, 0).sum(axis=(1, 2))    # sum sampled pixel values
+        num_samples = np.sum(contained)                                # add no. of sampled pixels
+
+        sample = sum_samples / num_samples        # compute mean sampled pixel values
+
+        return True, sample, poly
+
+    def get_filenames(self, objcoords):
+        &#34;&#34;&#34;
+        Construct all file names containing specified points.
+
+        Parameters
+        ----------
+        objcoords : list[tuple]
+            list of point coordinate tuples in (X, Y) format.
+
+        Returns
+        -------
+        filenames : list[str]
+            contains names of the files, ordered by ascending X, if equal by ascending Y positions.
+
+        &#34;&#34;&#34;
+        if not hasattr(objcoords[0], &#34;__len__&#34;):    # if a single point is specified instead of list of points
+            return self.get_filenames([objcoords]).pop()
+
+        filenames = list()
+
+        X, Y = zip(*objcoords)
+        X_min = min(X)
+        Y_min = min(Y)
+        X_max = max(X)
+        Y_max = max(Y)
+
+        # southwest corner coordinates coordinates of most southwest DOP tile
+        X_B0 = int(X_min / self.DOP_width) * self.DOP_width
+        Y_B0 = int(Y_min / self.DOP_width) * self.DOP_width
+
+        # base coordinates for all required DOP tiles
+        X_Bs = np.arange(X_B0, X_max, self.DOP_width, dtype=int)
+        Y_Bs = np.arange(Y_B0, Y_max, self.DOP_height, dtype=int)
+        if not X_Bs.size:
+            # if all X values are equal, np.arange will return np.array([])
+            X_Bs = [int(X_B0)]
+        if not Y_Bs.size:
+            # if all Y values are equal, np.arange will return np.array([])
+            Y_Bs = [int(Y_B0)]
+
+        base_coords = list(product(X_Bs, Y_Bs))
+
+        for X_B, Y_B in base_coords:
+            filename = self.filename_format(X_B, Y_B)
+            filenames.append(filename)
+        return filenames
+
+    def _open_file(self, filename):
+        &#34;&#34;&#34;
+        Open specified files from disk.
+
+        Parameters
+        ----------
+        filename : str
+            name of file to be loaded.
+
+        Returns
+        -------
+        flag : bool
+            True if file was successfully opened, False otherwise.
+
+        &#34;&#34;&#34;
+        if filename not in self.open_files:
+            if filename not in self.available_files:
+                return False
+
+            if len(self.open_files) &gt;= self.max_open_files:
+                self._close_files(len(self.open_files) - self.max_open_files)
+
+            self.open_files[filename] = rasterio.open(self.folder_in + filename)
+        return True
+
+    def read_data(self, poly, vertices, bands):
+        &#34;&#34;&#34;
+        Read a rectangular bounding box containing the specified Polygon from DOP files.
+        Sections of 1, 2, or 4 files are compiled, if necessary.
+
+        Parameters
+        ----------
+        poly : shapely.geometry.Polygon
+            Polygonal ROI which will be fully covered by the read-in data.
+        vertices : np.ndarray
+            coordinates of ROI vertices.
+        bands : tuple of int
+             tuple of the band indices to be read.
+
+        Returns
+        -------
+        flag : bool
+            True if data was read in successfully, False otherwise.
+        data : np.ndarray or None
+            raster data contained in the rectangular bounding box around poly, if successful. None otherwise.
+        data_trans : rasterio.affine.Affine or None
+            Affine transform from raster data pixels to object coordinates, if successful. None otherwise..
+
+        &#34;&#34;&#34;
+        # determine required input files and try to load them if necessary
+        filenames = self.get_filenames(vertices)
+        for filename in filenames:
+            if filename not in self.open_files:
+                is_success = self._open_file(filename)
+
+                if not is_success:              # if file could not be loaded
+                    return False, None, None
+
+        X_min, Y_min, X_max, Y_max = poly.bounds
+
+        try:
+            if len(filenames) == 1:
+                file = self.open_files[filenames[0]]
+
+                # windowed reading from input file
+                poly_window = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file.transform)
+                data_trans = windows.transform(poly_window, file.transform)
+                data = file.read(bands, window=poly_window)
+
+            elif len(filenames) == 2:
+                file_SW = self.open_files[filenames[0]]     # southern or western file is first in list
+                window_SW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SW.transform)
+
+                # create empty output array from window size
+                data = np.full((len(bands), round(window_SW.height), round(window_SW.width)), np.NaN, np.uint8)
+                data_trans = windows.transform(window_SW, file_SW.transform)    # Affine transform for data array
+
+                data_SW = file_SW.read(bands, window=window_SW)        # read windowed data from file_SW
+                _, h_SW, w_SW = data_SW.shape
+                if h_SW and w_SW:
+                    data[:, -h_SW:, 0:w_SW] = data_SW           # fill in appropriate area of output array
+
+                file_NE = self.open_files[filenames[1]]     # northern or eastern file is next in list
+                window_NE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NE.transform)
+                data_NE = file_NE.read(bands, window=window_NE)        # read windowed data from file_NE
+                _, h_NE, w_NE = data_NE.shape
+                if h_NE and w_NE:
+                    data[:, 0:h_NE, -w_NE:] = data_NE       # fill in appropriate area of output array
+
+            elif len(filenames) == 4:
+                file_SW = self.open_files[filenames[0]]
+                window_SW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SW.transform)
+
+                data = np.full((len(bands), round(window_SW.height), round(window_SW.width)), np.NaN, np.uint8)
+                data_trans = windows.transform(window_SW, file_SW.transform)
+
+                data_SW = file_SW.read(bands, window=window_SW)
+                _, h_SW, w_SW = data_SW.shape
+                if h_SW and w_SW:
+                    data[:, -h_SW:, 0:w_SW] = data_SW
+
+                file_SE = self.open_files[filenames[2]]
+                window_SE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SE.transform)
+                data_SE = file_SE.read(bands, window=window_SE)
+                _, h_SE, w_SE = data_SE.shape
+                if h_SE and w_SE:
+                    data[:, -h_SE:, -w_SE:] = data_SE
+
+                file_NW = self.open_files[filenames[1]]
+                window_NW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NW.transform)
+                data_NW = file_NW.read(bands, window=window_NW)
+                _, h_NW, w_NW = data_NW.shape
+                if h_NW and w_NW:
+                    data[:, 0:h_NW, 0:w_NW] = data_NW
+
+                file_NE = self.open_files[filenames[3]]
+                window_NE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NE.transform)
+                data_NE = file_NE.read(bands, window=window_NE)
+                _, h_NE, w_NE = data_NE.shape
+                if h_NE and w_NE:
+                    data[:, 0:h_NE, -w_NE:] = data_NE
+
+            else:
+                raise ValueError(&#34;poly must be covered by one single, two neighboring, or 2x2 neighboring files&#34;)
+
+            return True, data, data_trans
+
+        except KeyError:
+            return False, None, None
+
+    def _close_files(self, n_files=-1):
+        &#34;&#34;&#34;
+        Close files that have been open the longest (oldest file in dict).
+
+        Parameters
+        ----------
+        n_files : int, optional
+            Number of files to close, or -1 to close all files. The default is -1.
+            Note: if n_files &gt;= len(self.open_files), all files will be closed.
+
+        Returns
+        -------
+        None.
+
+        &#34;&#34;&#34;
+        if n_files == -1 or n_files &gt; len(self.open_files):
+            n_files = len(self.open_files)
+
+        for _ in range(n_files):
+            filename, file = next(iter(self.open_files.items()))
+            file.close()
+            del self.open_files[filename]
+        return</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="satcamsim.input_imgs.DOP_processor"><code class="flex name class">
+<span>class <span class="ident">DOP_processor</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Facilitate and simplify operations involving the input DOPs.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>bands</code></strong> :&ensp;<code>tuple</code> of <code>int</code></dt>
+<dd>the band indices to be read from the input data.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>dop_processor</code></strong> :&ensp;<code><a title="satcamsim.input_imgs.DOP_processor" href="#satcamsim.input_imgs.DOP_processor">DOP_processor</a></code></dt>
+<dd>a new DOP_processor instance.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DOP_processor:
+    &#34;&#34;&#34;
+    Facilitate and simplify operations involving the input DOPs.
+
+    Parameters
+    ----------
+    bands : tuple of int
+        the band indices to be read from the input data.
+
+    Returns
+    -------
+    dop_processor : DOP_processor
+        a new DOP_processor instance.
+
+    &#34;&#34;&#34;
+
+    def __init__(self):
+        self.open_files = dict()
+        self.available_files = list()
+        return
+
+    def from_config(config):
+        &#34;&#34;&#34;
+        Initialize a new DOP_processor with the parameters specified in config.
+
+        Parameters
+        ----------
+        config : Config
+            Config containing all relevant parameters.
+        bands : tuple of int
+            The relevant band indices of the input data.
+
+        Returns
+        -------
+        processor : DOP_processor
+            The initialized DOP_processor instance.
+
+        &#34;&#34;&#34;
+        processor = DOP_processor()
+        processor.max_open_files = config[&#39;MAX_OPEN_FILES&#39;]
+        processor.folder_in = config[&#39;DOP_FOLDER&#39;]
+        processor.gsd_in = config[&#39;GSD_DOP&#39;]
+        processor.count_R = config[&#39;COUNT_R&#39;]
+        processor.count_C = config[&#39;COUNT_C&#39;]
+        processor.filename_format = config[&#39;FILENAME_FORMAT&#39;]
+
+        processor.DOP_width = processor.count_C * processor.gsd_in
+        processor.DOP_height = processor.count_R * processor.gsd_in
+
+        return processor
+
+    def __del__(self):
+        &#34;&#34;&#34;
+        Guarantee that all files are closed before deletion.
+
+        Returns
+        -------
+        None.
+
+        &#34;&#34;&#34;
+        for _, file in self.open_files.items():
+            file.close()
+        return
+
+    def __enter__(self):
+        &#34;&#34;&#34;
+        Return self for use in context manager.
+
+        Returns
+        -------
+        self : DOP_processor
+            The DOP_processor instance for the context manager.
+
+        &#34;&#34;&#34;
+        self.available_files = listdir(self.folder_in)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        &#34;&#34;&#34;
+        Ensure proper closing of all files when exiting context manager.
+
+        Parameters
+        ----------
+        exc_type : exception type or None
+            Type of exception raised within context manager, or None.
+        exc_value : Exception or None
+            The exception raised within context manager, or None.
+        traceback : Traceback or None
+            Traceback object for the raised exception, or None.
+
+        Returns
+        -------
+        None.
+
+        &#34;&#34;&#34;
+        for _, file in self.open_files.items():
+            file.close()
+        return
+
+    def sample_area(self, corners_obj, bands):
+        &#34;&#34;&#34;
+        Compute mean of raster data within the polygonal area specified by its corners in object coordinates.
+
+        Parameters
+        ----------
+        corners_obj: list of tuple
+            list of (X, Y) coordinate tuples representing polygon corners.
+        bands : tuple of int
+            tuple of the band indices to be read.
+
+        Returns
+        -------
+        flag : bool
+            True if sampling was successful, False otherwise.
+        sample : np.array or None
+            array of shape (n_bands,) containing mean values for each band if sampling was successful, None otherwise.
+        poly : shapely.geometry.Polygon
+            the polygon area that was sampled (=ground track coverage). Returned even if sampling was unsuccessful.
+
+        &#34;&#34;&#34;
+        # create polygon of area of pixel projected onto terrain
+        poly = Polygon(corners_obj)
+
+        is_success, data, data_trans = self.read_data(poly, corners_obj, bands)
+
+        if not is_success:
+            return False, None, poly
+
+        # determine contained input pixels in read-in data
+        contained = features.rasterize([(poly, 1)], out_shape=data.shape[1:], fill=0, transform=data_trans)
+
+        # R_contained, C_contained = np.nonzero(contained)
+        sum_samples = np.where(contained, data, 0).sum(axis=(1, 2))    # sum sampled pixel values
+        num_samples = np.sum(contained)                                # add no. of sampled pixels
+
+        sample = sum_samples / num_samples        # compute mean sampled pixel values
+
+        return True, sample, poly
+
+    def get_filenames(self, objcoords):
+        &#34;&#34;&#34;
+        Construct all file names containing specified points.
+
+        Parameters
+        ----------
+        objcoords : list[tuple]
+            list of point coordinate tuples in (X, Y) format.
+
+        Returns
+        -------
+        filenames : list[str]
+            contains names of the files, ordered by ascending X, if equal by ascending Y positions.
+
+        &#34;&#34;&#34;
+        if not hasattr(objcoords[0], &#34;__len__&#34;):    # if a single point is specified instead of list of points
+            return self.get_filenames([objcoords]).pop()
+
+        filenames = list()
+
+        X, Y = zip(*objcoords)
+        X_min = min(X)
+        Y_min = min(Y)
+        X_max = max(X)
+        Y_max = max(Y)
+
+        # southwest corner coordinates coordinates of most southwest DOP tile
+        X_B0 = int(X_min / self.DOP_width) * self.DOP_width
+        Y_B0 = int(Y_min / self.DOP_width) * self.DOP_width
+
+        # base coordinates for all required DOP tiles
+        X_Bs = np.arange(X_B0, X_max, self.DOP_width, dtype=int)
+        Y_Bs = np.arange(Y_B0, Y_max, self.DOP_height, dtype=int)
+        if not X_Bs.size:
+            # if all X values are equal, np.arange will return np.array([])
+            X_Bs = [int(X_B0)]
+        if not Y_Bs.size:
+            # if all Y values are equal, np.arange will return np.array([])
+            Y_Bs = [int(Y_B0)]
+
+        base_coords = list(product(X_Bs, Y_Bs))
+
+        for X_B, Y_B in base_coords:
+            filename = self.filename_format(X_B, Y_B)
+            filenames.append(filename)
+        return filenames
+
+    def _open_file(self, filename):
+        &#34;&#34;&#34;
+        Open specified files from disk.
+
+        Parameters
+        ----------
+        filename : str
+            name of file to be loaded.
+
+        Returns
+        -------
+        flag : bool
+            True if file was successfully opened, False otherwise.
+
+        &#34;&#34;&#34;
+        if filename not in self.open_files:
+            if filename not in self.available_files:
+                return False
+
+            if len(self.open_files) &gt;= self.max_open_files:
+                self._close_files(len(self.open_files) - self.max_open_files)
+
+            self.open_files[filename] = rasterio.open(self.folder_in + filename)
+        return True
+
+    def read_data(self, poly, vertices, bands):
+        &#34;&#34;&#34;
+        Read a rectangular bounding box containing the specified Polygon from DOP files.
+        Sections of 1, 2, or 4 files are compiled, if necessary.
+
+        Parameters
+        ----------
+        poly : shapely.geometry.Polygon
+            Polygonal ROI which will be fully covered by the read-in data.
+        vertices : np.ndarray
+            coordinates of ROI vertices.
+        bands : tuple of int
+             tuple of the band indices to be read.
+
+        Returns
+        -------
+        flag : bool
+            True if data was read in successfully, False otherwise.
+        data : np.ndarray or None
+            raster data contained in the rectangular bounding box around poly, if successful. None otherwise.
+        data_trans : rasterio.affine.Affine or None
+            Affine transform from raster data pixels to object coordinates, if successful. None otherwise..
+
+        &#34;&#34;&#34;
+        # determine required input files and try to load them if necessary
+        filenames = self.get_filenames(vertices)
+        for filename in filenames:
+            if filename not in self.open_files:
+                is_success = self._open_file(filename)
+
+                if not is_success:              # if file could not be loaded
+                    return False, None, None
+
+        X_min, Y_min, X_max, Y_max = poly.bounds
+
+        try:
+            if len(filenames) == 1:
+                file = self.open_files[filenames[0]]
+
+                # windowed reading from input file
+                poly_window = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file.transform)
+                data_trans = windows.transform(poly_window, file.transform)
+                data = file.read(bands, window=poly_window)
+
+            elif len(filenames) == 2:
+                file_SW = self.open_files[filenames[0]]     # southern or western file is first in list
+                window_SW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SW.transform)
+
+                # create empty output array from window size
+                data = np.full((len(bands), round(window_SW.height), round(window_SW.width)), np.NaN, np.uint8)
+                data_trans = windows.transform(window_SW, file_SW.transform)    # Affine transform for data array
+
+                data_SW = file_SW.read(bands, window=window_SW)        # read windowed data from file_SW
+                _, h_SW, w_SW = data_SW.shape
+                if h_SW and w_SW:
+                    data[:, -h_SW:, 0:w_SW] = data_SW           # fill in appropriate area of output array
+
+                file_NE = self.open_files[filenames[1]]     # northern or eastern file is next in list
+                window_NE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NE.transform)
+                data_NE = file_NE.read(bands, window=window_NE)        # read windowed data from file_NE
+                _, h_NE, w_NE = data_NE.shape
+                if h_NE and w_NE:
+                    data[:, 0:h_NE, -w_NE:] = data_NE       # fill in appropriate area of output array
+
+            elif len(filenames) == 4:
+                file_SW = self.open_files[filenames[0]]
+                window_SW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SW.transform)
+
+                data = np.full((len(bands), round(window_SW.height), round(window_SW.width)), np.NaN, np.uint8)
+                data_trans = windows.transform(window_SW, file_SW.transform)
+
+                data_SW = file_SW.read(bands, window=window_SW)
+                _, h_SW, w_SW = data_SW.shape
+                if h_SW and w_SW:
+                    data[:, -h_SW:, 0:w_SW] = data_SW
+
+                file_SE = self.open_files[filenames[2]]
+                window_SE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SE.transform)
+                data_SE = file_SE.read(bands, window=window_SE)
+                _, h_SE, w_SE = data_SE.shape
+                if h_SE and w_SE:
+                    data[:, -h_SE:, -w_SE:] = data_SE
+
+                file_NW = self.open_files[filenames[1]]
+                window_NW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NW.transform)
+                data_NW = file_NW.read(bands, window=window_NW)
+                _, h_NW, w_NW = data_NW.shape
+                if h_NW and w_NW:
+                    data[:, 0:h_NW, 0:w_NW] = data_NW
+
+                file_NE = self.open_files[filenames[3]]
+                window_NE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NE.transform)
+                data_NE = file_NE.read(bands, window=window_NE)
+                _, h_NE, w_NE = data_NE.shape
+                if h_NE and w_NE:
+                    data[:, 0:h_NE, -w_NE:] = data_NE
+
+            else:
+                raise ValueError(&#34;poly must be covered by one single, two neighboring, or 2x2 neighboring files&#34;)
+
+            return True, data, data_trans
+
+        except KeyError:
+            return False, None, None
+
+    def _close_files(self, n_files=-1):
+        &#34;&#34;&#34;
+        Close files that have been open the longest (oldest file in dict).
+
+        Parameters
+        ----------
+        n_files : int, optional
+            Number of files to close, or -1 to close all files. The default is -1.
+            Note: if n_files &gt;= len(self.open_files), all files will be closed.
+
+        Returns
+        -------
+        None.
+
+        &#34;&#34;&#34;
+        if n_files == -1 or n_files &gt; len(self.open_files):
+            n_files = len(self.open_files)
+
+        for _ in range(n_files):
+            filename, file = next(iter(self.open_files.items()))
+            file.close()
+            del self.open_files[filename]
+        return</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="satcamsim.input_imgs.DOP_processor.from_config"><code class="name flex">
+<span>def <span class="ident">from_config</span></span>(<span>config)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Initialize a new DOP_processor with the parameters specified in config.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>config</code></strong> :&ensp;<code>Config</code></dt>
+<dd>Config containing all relevant parameters.</dd>
+<dt><strong><code>bands</code></strong> :&ensp;<code>tuple</code> of <code>int</code></dt>
+<dd>The relevant band indices of the input data.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>processor</code></strong> :&ensp;<code><a title="satcamsim.input_imgs.DOP_processor" href="#satcamsim.input_imgs.DOP_processor">DOP_processor</a></code></dt>
+<dd>The initialized DOP_processor instance.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def from_config(config):
+    &#34;&#34;&#34;
+    Initialize a new DOP_processor with the parameters specified in config.
+
+    Parameters
+    ----------
+    config : Config
+        Config containing all relevant parameters.
+    bands : tuple of int
+        The relevant band indices of the input data.
+
+    Returns
+    -------
+    processor : DOP_processor
+        The initialized DOP_processor instance.
+
+    &#34;&#34;&#34;
+    processor = DOP_processor()
+    processor.max_open_files = config[&#39;MAX_OPEN_FILES&#39;]
+    processor.folder_in = config[&#39;DOP_FOLDER&#39;]
+    processor.gsd_in = config[&#39;GSD_DOP&#39;]
+    processor.count_R = config[&#39;COUNT_R&#39;]
+    processor.count_C = config[&#39;COUNT_C&#39;]
+    processor.filename_format = config[&#39;FILENAME_FORMAT&#39;]
+
+    processor.DOP_width = processor.count_C * processor.gsd_in
+    processor.DOP_height = processor.count_R * processor.gsd_in
+
+    return processor</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.input_imgs.DOP_processor.get_filenames"><code class="name flex">
+<span>def <span class="ident">get_filenames</span></span>(<span>self, objcoords)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Construct all file names containing specified points.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>objcoords</code></strong> :&ensp;<code>list[tuple]</code></dt>
+<dd>list of point coordinate tuples in (X, Y) format.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>filenames</code></strong> :&ensp;<code>list[str]</code></dt>
+<dd>contains names of the files, ordered by ascending X, if equal by ascending Y positions.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_filenames(self, objcoords):
+    &#34;&#34;&#34;
+    Construct all file names containing specified points.
+
+    Parameters
+    ----------
+    objcoords : list[tuple]
+        list of point coordinate tuples in (X, Y) format.
+
+    Returns
+    -------
+    filenames : list[str]
+        contains names of the files, ordered by ascending X, if equal by ascending Y positions.
+
+    &#34;&#34;&#34;
+    if not hasattr(objcoords[0], &#34;__len__&#34;):    # if a single point is specified instead of list of points
+        return self.get_filenames([objcoords]).pop()
+
+    filenames = list()
+
+    X, Y = zip(*objcoords)
+    X_min = min(X)
+    Y_min = min(Y)
+    X_max = max(X)
+    Y_max = max(Y)
+
+    # southwest corner coordinates coordinates of most southwest DOP tile
+    X_B0 = int(X_min / self.DOP_width) * self.DOP_width
+    Y_B0 = int(Y_min / self.DOP_width) * self.DOP_width
+
+    # base coordinates for all required DOP tiles
+    X_Bs = np.arange(X_B0, X_max, self.DOP_width, dtype=int)
+    Y_Bs = np.arange(Y_B0, Y_max, self.DOP_height, dtype=int)
+    if not X_Bs.size:
+        # if all X values are equal, np.arange will return np.array([])
+        X_Bs = [int(X_B0)]
+    if not Y_Bs.size:
+        # if all Y values are equal, np.arange will return np.array([])
+        Y_Bs = [int(Y_B0)]
+
+    base_coords = list(product(X_Bs, Y_Bs))
+
+    for X_B, Y_B in base_coords:
+        filename = self.filename_format(X_B, Y_B)
+        filenames.append(filename)
+    return filenames</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.input_imgs.DOP_processor.read_data"><code class="name flex">
+<span>def <span class="ident">read_data</span></span>(<span>self, poly, vertices, bands)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Read a rectangular bounding box containing the specified Polygon from DOP files.
+Sections of 1, 2, or 4 files are compiled, if necessary.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>poly</code></strong> :&ensp;<code>shapely.geometry.Polygon</code></dt>
+<dd>Polygonal ROI which will be fully covered by the read-in data.</dd>
+<dt><strong><code>vertices</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>coordinates of ROI vertices.</dd>
+<dt><strong><code>bands</code></strong> :&ensp;<code>tuple</code> of <code>int</code></dt>
+<dd>tuple of the band indices to be read.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>flag</code></strong> :&ensp;<code>bool</code></dt>
+<dd>True if data was read in successfully, False otherwise.</dd>
+<dt><strong><code>data</code></strong> :&ensp;<code>np.ndarray</code> or <code>None</code></dt>
+<dd>raster data contained in the rectangular bounding box around poly, if successful. None otherwise.</dd>
+<dt><strong><code>data_trans</code></strong> :&ensp;<code>rasterio.affine.Affine</code> or <code>None</code></dt>
+<dd>Affine transform from raster data pixels to object coordinates, if successful. None otherwise..</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read_data(self, poly, vertices, bands):
+    &#34;&#34;&#34;
+    Read a rectangular bounding box containing the specified Polygon from DOP files.
+    Sections of 1, 2, or 4 files are compiled, if necessary.
+
+    Parameters
+    ----------
+    poly : shapely.geometry.Polygon
+        Polygonal ROI which will be fully covered by the read-in data.
+    vertices : np.ndarray
+        coordinates of ROI vertices.
+    bands : tuple of int
+         tuple of the band indices to be read.
+
+    Returns
+    -------
+    flag : bool
+        True if data was read in successfully, False otherwise.
+    data : np.ndarray or None
+        raster data contained in the rectangular bounding box around poly, if successful. None otherwise.
+    data_trans : rasterio.affine.Affine or None
+        Affine transform from raster data pixels to object coordinates, if successful. None otherwise..
+
+    &#34;&#34;&#34;
+    # determine required input files and try to load them if necessary
+    filenames = self.get_filenames(vertices)
+    for filename in filenames:
+        if filename not in self.open_files:
+            is_success = self._open_file(filename)
+
+            if not is_success:              # if file could not be loaded
+                return False, None, None
+
+    X_min, Y_min, X_max, Y_max = poly.bounds
+
+    try:
+        if len(filenames) == 1:
+            file = self.open_files[filenames[0]]
+
+            # windowed reading from input file
+            poly_window = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file.transform)
+            data_trans = windows.transform(poly_window, file.transform)
+            data = file.read(bands, window=poly_window)
+
+        elif len(filenames) == 2:
+            file_SW = self.open_files[filenames[0]]     # southern or western file is first in list
+            window_SW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SW.transform)
+
+            # create empty output array from window size
+            data = np.full((len(bands), round(window_SW.height), round(window_SW.width)), np.NaN, np.uint8)
+            data_trans = windows.transform(window_SW, file_SW.transform)    # Affine transform for data array
+
+            data_SW = file_SW.read(bands, window=window_SW)        # read windowed data from file_SW
+            _, h_SW, w_SW = data_SW.shape
+            if h_SW and w_SW:
+                data[:, -h_SW:, 0:w_SW] = data_SW           # fill in appropriate area of output array
+
+            file_NE = self.open_files[filenames[1]]     # northern or eastern file is next in list
+            window_NE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NE.transform)
+            data_NE = file_NE.read(bands, window=window_NE)        # read windowed data from file_NE
+            _, h_NE, w_NE = data_NE.shape
+            if h_NE and w_NE:
+                data[:, 0:h_NE, -w_NE:] = data_NE       # fill in appropriate area of output array
+
+        elif len(filenames) == 4:
+            file_SW = self.open_files[filenames[0]]
+            window_SW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SW.transform)
+
+            data = np.full((len(bands), round(window_SW.height), round(window_SW.width)), np.NaN, np.uint8)
+            data_trans = windows.transform(window_SW, file_SW.transform)
+
+            data_SW = file_SW.read(bands, window=window_SW)
+            _, h_SW, w_SW = data_SW.shape
+            if h_SW and w_SW:
+                data[:, -h_SW:, 0:w_SW] = data_SW
+
+            file_SE = self.open_files[filenames[2]]
+            window_SE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SE.transform)
+            data_SE = file_SE.read(bands, window=window_SE)
+            _, h_SE, w_SE = data_SE.shape
+            if h_SE and w_SE:
+                data[:, -h_SE:, -w_SE:] = data_SE
+
+            file_NW = self.open_files[filenames[1]]
+            window_NW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NW.transform)
+            data_NW = file_NW.read(bands, window=window_NW)
+            _, h_NW, w_NW = data_NW.shape
+            if h_NW and w_NW:
+                data[:, 0:h_NW, 0:w_NW] = data_NW
+
+            file_NE = self.open_files[filenames[3]]
+            window_NE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NE.transform)
+            data_NE = file_NE.read(bands, window=window_NE)
+            _, h_NE, w_NE = data_NE.shape
+            if h_NE and w_NE:
+                data[:, 0:h_NE, -w_NE:] = data_NE
+
+        else:
+            raise ValueError(&#34;poly must be covered by one single, two neighboring, or 2x2 neighboring files&#34;)
+
+        return True, data, data_trans
+
+    except KeyError:
+        return False, None, None</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.input_imgs.DOP_processor.sample_area"><code class="name flex">
+<span>def <span class="ident">sample_area</span></span>(<span>self, corners_obj, bands)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Compute mean of raster data within the polygonal area specified by its corners in object coordinates.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>corners_obj</code></strong> :&ensp;<code>list</code> of <code>tuple</code></dt>
+<dd>list of (X, Y) coordinate tuples representing polygon corners.</dd>
+<dt><strong><code>bands</code></strong> :&ensp;<code>tuple</code> of <code>int</code></dt>
+<dd>tuple of the band indices to be read.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>flag</code></strong> :&ensp;<code>bool</code></dt>
+<dd>True if sampling was successful, False otherwise.</dd>
+<dt><strong><code>sample</code></strong> :&ensp;<code>np.array</code> or <code>None</code></dt>
+<dd>array of shape (n_bands,) containing mean values for each band if sampling was successful, None otherwise.</dd>
+<dt><strong><code>poly</code></strong> :&ensp;<code>shapely.geometry.Polygon</code></dt>
+<dd>the polygon area that was sampled (=ground track coverage). Returned even if sampling was unsuccessful.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sample_area(self, corners_obj, bands):
+    &#34;&#34;&#34;
+    Compute mean of raster data within the polygonal area specified by its corners in object coordinates.
+
+    Parameters
+    ----------
+    corners_obj: list of tuple
+        list of (X, Y) coordinate tuples representing polygon corners.
+    bands : tuple of int
+        tuple of the band indices to be read.
+
+    Returns
+    -------
+    flag : bool
+        True if sampling was successful, False otherwise.
+    sample : np.array or None
+        array of shape (n_bands,) containing mean values for each band if sampling was successful, None otherwise.
+    poly : shapely.geometry.Polygon
+        the polygon area that was sampled (=ground track coverage). Returned even if sampling was unsuccessful.
+
+    &#34;&#34;&#34;
+    # create polygon of area of pixel projected onto terrain
+    poly = Polygon(corners_obj)
+
+    is_success, data, data_trans = self.read_data(poly, corners_obj, bands)
+
+    if not is_success:
+        return False, None, poly
+
+    # determine contained input pixels in read-in data
+    contained = features.rasterize([(poly, 1)], out_shape=data.shape[1:], fill=0, transform=data_trans)
+
+    # R_contained, C_contained = np.nonzero(contained)
+    sum_samples = np.where(contained, data, 0).sum(axis=(1, 2))    # sum sampled pixel values
+    num_samples = np.sum(contained)                                # add no. of sampled pixels
+
+    sample = sum_samples / num_samples        # compute mean sampled pixel values
+
+    return True, sample, poly</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="satcamsim.input_imgs.Feature_finder"><code class="flex name class">
+<span>class <span class="ident">Feature_finder</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Find position of point features in simulated line scan image.</p>
+<p>The .csv containing 2D GCPs must have the format: <code>id,X,Y</code>.</p>
+<p>The .csv containing 3D GCPs must have the format: <code>id,X,Y,Z</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Feature_finder:
+    &#34;&#34;&#34;Find position of point features in simulated line scan image.
+
+    The .csv containing 2D GCPs must have the format: `id,X,Y`.
+
+    The .csv containing 3D GCPs must have the format: `id,X,Y,Z`.&#34;&#34;&#34;
+
+    def __init__(self):
+        self.names_2D = np.array([], dtype=object)
+        self.points_2D = np.array([], dtype=object)
+        self.coords_2D = np.empty((0, 2), dtype=float)
+
+        self.names_3D = np.array([], dtype=object)
+        self.points_3D = np.array([], dtype=object)
+        self.coords_3D = np.empty((0, 3), dtype=float)
+
+        self.Z_terrain = 0
+        self.buffer = 0
+        return
+
+    def from_config(config):
+        &#34;&#34;&#34;
+        Initialize Feature_finder with config parameters.
+
+        Parameters
+        ----------
+        config : Config
+            Config instance containing desired parameters.
+
+        Returns
+        -------
+        finder : Feature_finder
+            initizialized Feature_finder instance.
+
+        &#34;&#34;&#34;
+        if not config[&#39;FIND_FEATURES&#39;]:
+            return None
+
+        finder = Feature_finder()
+        finder.Z_terrain = config[&#39;MEAN_TERRAIN_HEIGHT&#39;]
+
+        if config[&#39;FEATURE_CSV_PATH_2D&#39;]:
+            filepath = config[&#39;FEATURE_CSV_PATH_2D&#39;]
+
+            name_list = []
+            coord_list = []
+            point_list = []
+            with open(filepath) as file:
+                csv_reader = csv.reader(file)
+                for row in csv_reader:
+                    name_list.append(str(row[0]))
+                    coords = (float(row[1]), float(row[2]))
+                    point_list.append(Point(coords))
+                    coord_list.append(coords)
+
+            coord_list, point_list, name_list = zip(*sorted(zip(coord_list, point_list, name_list)))
+
+            finder.coords_2D = np.array(coord_list)
+            finder.names_2D = np.empty(len(name_list), dtype=object)
+            finder.points_2D = np.empty(len(point_list), dtype=type(Point))
+            for idx, (point, name) in enumerate(zip(point_list, name_list)):
+                finder.points_2D[idx] = point
+                finder.names_2D[idx] = name
+
+        if config[&#39;FEATURE_CSV_PATH_3D&#39;]:
+            filepath = config[&#39;FEATURE_CSV_PATH_3D&#39;]
+
+            # read in 3D GCPs
+            name_list = []
+            coord_list = []
+            point_list = []
+            with open(filepath) as file:
+                csv_reader = csv.reader(file)
+                for row in csv_reader:
+                    name_list.append(str(row[0]))
+                    coords = (float(row[1]), float(row[2]), float(row[3]))
+                    point_list.append(Point(coords))
+                    coord_list.append(coords)
+
+            coord_list, point_list, name_list = zip(*sorted(zip(coord_list, point_list, name_list)))
+
+            finder.coords_3D = np.array(coord_list)     # fill array of point coordinates
+            finder.names_3D = np.empty(len(name_list), dtype=object)
+            finder.points_3D = np.empty(len(point_list), dtype=type(Point))
+            for idx, (point, name) in enumerate(zip(point_list, name_list)):
+                finder.points_3D[idx] = point           # fill array of Point objects
+                finder.names_3D[idx] = name             # fill array of point names/identifiers as str
+
+            approx_view_angle = np.deg2rad(config[&#39;APPROX_VIEW_ANGLE&#39;])
+            max_roll = np.deg2rad(config[&#39;MAX_ROLL_ANGLE&#39;])
+
+            # buffer to determine radius within which distorted 3D points may be found
+            finder.buffer = np.max(np.abs(finder.coords_3D[:, 2] - finder.Z_terrain)) * np.tan(0.5 * approx_view_angle + max_roll)
+        return finder
+
+    def check(self, poly, vertices, line_idx, px_idx, sensor_name, pose):
+        &#34;&#34;&#34;
+        Check which of the Feature_finder&#39;s GCPs (if any) are contained within a polygon.
+
+        Parameters
+        ----------
+        poly : Polygon
+            Polygon to be checked.
+        line_idx : int
+            current pose.idx.
+        px_idx : int
+            current pixel&#39;s c coordinate.
+        sensor_name : str
+            current sensor&#39;s name.
+        pose : Cam_pose
+            current sensor&#39;s exterior orientation.
+
+        Returns
+        -------
+        found_feats : list[tuple]
+            list containing tuples with (GCP_name, line_idx, px_idx, sensor_name, GCP_X, GCP_Y, GCP_Z) of all GCPs contained in poly.
+            GCPs without Z information are marked with GCP_Z = 999999.
+
+        &#34;&#34;&#34;
+        X_min, Y_min, X_max, Y_max = poly.bounds
+
+        candidate_idxs = self._get_candidates_2D(X_min, Y_min, X_max, Y_max)
+        # create list with tuple of format: (feature_name, row, column, sensor_name, feature_X, feature_Y, 999999)
+        found_feats_2D = [(point_name, line_idx, px_idx, sensor_name, point_coords[0], point_coords[1], 999999) for point_name, point_coords, point in zip(self.names_2D[candidate_idxs], self.coords_2D[candidate_idxs], self.points_2D[candidate_idxs]) if poly.contains(point)]
+
+        candidate_idxs = self._get_candidates_3D(X_min, Y_min, X_max, Y_max)
+        # create list with tuple of format: (feature_name, row, column, sensor_name, feature_X, feature_Y, feature_Z)
+        found_feats_3D = [(point_name, line_idx, px_idx, sensor_name, point_coords[0], point_coords[1], point_coords[2]) for point_name, point_coords, point in zip(self.names_3D[candidate_idxs], self.coords_3D[candidate_idxs], self.points_3D[candidate_idxs]) if self._get_poly_Z(vertices, point_coords[2], pose).contains(point)]
+
+        return found_feats_2D + found_feats_3D
+
+    def _get_candidates_3D(self, X_min, Y_min, X_max, Y_max):
+        &#34;&#34;&#34;Preselect GCPs based on rectangular bounding box and buffer zone.&#34;&#34;&#34;
+        start_idx = np.searchsorted(self.coords_3D[:, 0], X_min - self.buffer)
+        stop_idx = start_idx + np.searchsorted(self.coords_3D[start_idx:, 0], X_max + self.buffer, &#39;right&#39;)
+
+        candidate_idxs = start_idx + np.where(np.logical_and(self.coords_3D[start_idx:stop_idx, 1] &gt;= Y_min - self.buffer, self.coords_3D[start_idx:stop_idx, 1] &lt;= Y_max + self.buffer))[0]
+
+        return candidate_idxs
+
+    def _get_candidates_2D(self, X_min, Y_min, X_max, Y_max):
+        &#34;&#34;&#34;Preselect GCPs based on rectangular bounding box.&#34;&#34;&#34;
+        start_idx = np.searchsorted(self.coords_2D[:, 0], X_min)
+        stop_idx = start_idx + np.searchsorted(self.coords_2D[start_idx:, 0], X_max, &#39;right&#39;)
+
+        candidate_idxs = start_idx + np.where(np.logical_and(self.coords_2D[start_idx:stop_idx, 1] &gt;= Y_min, self.coords_2D[start_idx:stop_idx, 1] &lt;= Y_max))[0]
+
+        return candidate_idxs
+
+    def _get_ray_at_Z(self, point, proj_center, Z):
+        &#34;&#34;&#34;Ray tracing for 3D GCP detection. Returns X, Y position of ray passing through point and proj_center at elevation Z.&#34;&#34;&#34;
+        deltaZ = proj_center[2] - self.Z_terrain
+        deltas = (proj_center[0:2] - point) / deltaZ
+        X, Y = point + deltas * (Z - self.Z_terrain)
+        return X, Y
+
+    def _get_poly_Z(self, vertices, Z, pose):
+        &#34;&#34;&#34;Create new Polygon at a candidate GCP&#39;s Z elevation to determine whether it is inside FOV.&#34;&#34;&#34;
+        new_center = pose.XYZ_0
+        old_center = pose.previous.XYZ_0
+        poly_Z = Polygon([self._get_ray_at_Z(vertices[0], new_center, Z),
+                          self._get_ray_at_Z(vertices[1], old_center, Z),
+                          self._get_ray_at_Z(vertices[2], old_center, Z),
+                          self._get_ray_at_Z(vertices[3], new_center, Z)])
+        return poly_Z</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="satcamsim.input_imgs.Feature_finder.check"><code class="name flex">
+<span>def <span class="ident">check</span></span>(<span>self, poly, vertices, line_idx, px_idx, sensor_name, pose)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Check which of the Feature_finder's GCPs (if any) are contained within a polygon.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>poly</code></strong> :&ensp;<code>Polygon</code></dt>
+<dd>Polygon to be checked.</dd>
+<dt><strong><code>line_idx</code></strong> :&ensp;<code>int</code></dt>
+<dd>current pose.idx.</dd>
+<dt><strong><code>px_idx</code></strong> :&ensp;<code>int</code></dt>
+<dd>current pixel's c coordinate.</dd>
+<dt><strong><code>sensor_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>current sensor's name.</dd>
+<dt><strong><code>pose</code></strong> :&ensp;<code>Cam_pose</code></dt>
+<dd>current sensor's exterior orientation.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>found_feats</code></strong> :&ensp;<code>list[tuple]</code></dt>
+<dd>list containing tuples with (GCP_name, line_idx, px_idx, sensor_name, GCP_X, GCP_Y, GCP_Z) of all GCPs contained in poly.
+GCPs without Z information are marked with GCP_Z = 999999.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check(self, poly, vertices, line_idx, px_idx, sensor_name, pose):
+    &#34;&#34;&#34;
+    Check which of the Feature_finder&#39;s GCPs (if any) are contained within a polygon.
+
+    Parameters
+    ----------
+    poly : Polygon
+        Polygon to be checked.
+    line_idx : int
+        current pose.idx.
+    px_idx : int
+        current pixel&#39;s c coordinate.
+    sensor_name : str
+        current sensor&#39;s name.
+    pose : Cam_pose
+        current sensor&#39;s exterior orientation.
+
+    Returns
+    -------
+    found_feats : list[tuple]
+        list containing tuples with (GCP_name, line_idx, px_idx, sensor_name, GCP_X, GCP_Y, GCP_Z) of all GCPs contained in poly.
+        GCPs without Z information are marked with GCP_Z = 999999.
+
+    &#34;&#34;&#34;
+    X_min, Y_min, X_max, Y_max = poly.bounds
+
+    candidate_idxs = self._get_candidates_2D(X_min, Y_min, X_max, Y_max)
+    # create list with tuple of format: (feature_name, row, column, sensor_name, feature_X, feature_Y, 999999)
+    found_feats_2D = [(point_name, line_idx, px_idx, sensor_name, point_coords[0], point_coords[1], 999999) for point_name, point_coords, point in zip(self.names_2D[candidate_idxs], self.coords_2D[candidate_idxs], self.points_2D[candidate_idxs]) if poly.contains(point)]
+
+    candidate_idxs = self._get_candidates_3D(X_min, Y_min, X_max, Y_max)
+    # create list with tuple of format: (feature_name, row, column, sensor_name, feature_X, feature_Y, feature_Z)
+    found_feats_3D = [(point_name, line_idx, px_idx, sensor_name, point_coords[0], point_coords[1], point_coords[2]) for point_name, point_coords, point in zip(self.names_3D[candidate_idxs], self.coords_3D[candidate_idxs], self.points_3D[candidate_idxs]) if self._get_poly_Z(vertices, point_coords[2], pose).contains(point)]
+
+    return found_feats_2D + found_feats_3D</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.input_imgs.Feature_finder.from_config"><code class="name flex">
+<span>def <span class="ident">from_config</span></span>(<span>config)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Initialize Feature_finder with config parameters.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>config</code></strong> :&ensp;<code>Config</code></dt>
+<dd>Config instance containing desired parameters.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>finder</code></strong> :&ensp;<code><a title="satcamsim.input_imgs.Feature_finder" href="#satcamsim.input_imgs.Feature_finder">Feature_finder</a></code></dt>
+<dd>initizialized Feature_finder instance.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def from_config(config):
+    &#34;&#34;&#34;
+    Initialize Feature_finder with config parameters.
+
+    Parameters
+    ----------
+    config : Config
+        Config instance containing desired parameters.
+
+    Returns
+    -------
+    finder : Feature_finder
+        initizialized Feature_finder instance.
+
+    &#34;&#34;&#34;
+    if not config[&#39;FIND_FEATURES&#39;]:
+        return None
+
+    finder = Feature_finder()
+    finder.Z_terrain = config[&#39;MEAN_TERRAIN_HEIGHT&#39;]
+
+    if config[&#39;FEATURE_CSV_PATH_2D&#39;]:
+        filepath = config[&#39;FEATURE_CSV_PATH_2D&#39;]
+
+        name_list = []
+        coord_list = []
+        point_list = []
+        with open(filepath) as file:
+            csv_reader = csv.reader(file)
+            for row in csv_reader:
+                name_list.append(str(row[0]))
+                coords = (float(row[1]), float(row[2]))
+                point_list.append(Point(coords))
+                coord_list.append(coords)
+
+        coord_list, point_list, name_list = zip(*sorted(zip(coord_list, point_list, name_list)))
+
+        finder.coords_2D = np.array(coord_list)
+        finder.names_2D = np.empty(len(name_list), dtype=object)
+        finder.points_2D = np.empty(len(point_list), dtype=type(Point))
+        for idx, (point, name) in enumerate(zip(point_list, name_list)):
+            finder.points_2D[idx] = point
+            finder.names_2D[idx] = name
+
+    if config[&#39;FEATURE_CSV_PATH_3D&#39;]:
+        filepath = config[&#39;FEATURE_CSV_PATH_3D&#39;]
+
+        # read in 3D GCPs
+        name_list = []
+        coord_list = []
+        point_list = []
+        with open(filepath) as file:
+            csv_reader = csv.reader(file)
+            for row in csv_reader:
+                name_list.append(str(row[0]))
+                coords = (float(row[1]), float(row[2]), float(row[3]))
+                point_list.append(Point(coords))
+                coord_list.append(coords)
+
+        coord_list, point_list, name_list = zip(*sorted(zip(coord_list, point_list, name_list)))
+
+        finder.coords_3D = np.array(coord_list)     # fill array of point coordinates
+        finder.names_3D = np.empty(len(name_list), dtype=object)
+        finder.points_3D = np.empty(len(point_list), dtype=type(Point))
+        for idx, (point, name) in enumerate(zip(point_list, name_list)):
+            finder.points_3D[idx] = point           # fill array of Point objects
+            finder.names_3D[idx] = name             # fill array of point names/identifiers as str
+
+        approx_view_angle = np.deg2rad(config[&#39;APPROX_VIEW_ANGLE&#39;])
+        max_roll = np.deg2rad(config[&#39;MAX_ROLL_ANGLE&#39;])
+
+        # buffer to determine radius within which distorted 3D points may be found
+        finder.buffer = np.max(np.abs(finder.coords_3D[:, 2] - finder.Z_terrain)) * np.tan(0.5 * approx_view_angle + max_roll)
+    return finder</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="satcamsim.input_imgs.Raster_processor"><code class="flex name class">
+<span>class <span class="ident">Raster_processor</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Facilitate and simplify operations involving raster data used as comparison.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Raster_processor:
+    &#34;&#34;&#34;Facilitate and simplify operations involving raster data used as comparison.&#34;&#34;&#34;
+
+    def __init__(self):
+        self.open_files = dict()
+        return
+
+    def from_config(config, folder_out):
+        &#34;&#34;&#34;
+        Initialize Raster_processor with config parameters.
+
+        Parameters
+        ----------
+        config : Config
+            Config specifying the processor parameters.
+        folder_out : str
+            Path to output folder for the processor.
+
+        Returns
+        -------
+        processor : Raster_processor
+            The initialized processor.
+
+        &#34;&#34;&#34;
+        processor = Raster_processor()
+        processor.gsd_in = config[&#39;GSD_COMP&#39;]
+        processor.folder_in = config[&#39;COMPARE_FOLDER&#39;]
+        processor.filenames = config[&#39;COMP_FILES&#39;]
+
+        # create coordinate reference system
+        processor.crs_DOP = pyproj.CRS(&#34;epsg:25832&#34;)
+
+        processor.folder_out = folder_out
+
+        processor.glue_multipolys = config[&#39;GLUE_MULTIPOLYS&#39;]
+        if processor.glue_multipolys:
+            processor.max_dist_glue = config[&#39;MAX_DIST_GLUE&#39;]
+            processor.max_iter_glue = config[&#39;MAX_ITER_GLUE&#39;]
+            processor.glue_dist = processor.max_dist_glue / processor.max_iter_glue
+
+        return processor
+
+    def __del__(self):
+        &#34;&#34;&#34;
+        Guarantee that all files are closed before deletion.
+
+        Returns
+        -------
+        None.
+
+        &#34;&#34;&#34;
+        for _, file in self.open_files.items():
+            file.close()
+        return
+
+    def __enter__(self):
+        &#34;&#34;&#34;
+        Open comparison files for use in context manager.
+
+        Returns
+        -------
+        self : Raster_processor
+            The Raster_processor instance created for the context manager.
+
+        &#34;&#34;&#34;
+        if not self.filenames:
+            self.filenames = listdir(self.folder_in)
+        for filename in self.filenames:
+            self._open_file(filename)
+
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        &#34;&#34;&#34;
+        Ensure proper closing of all files when exiting context manager.
+
+        Parameters
+        ----------
+        exc_type : exception type or None
+            Type of exception raised within context manager, or None.
+        exc_value : Exception or None
+            The exception raised within context manager, or None.
+        traceback : Traceback or None
+            Traceback object for the raised exception, or None.
+
+        Returns
+        -------
+        None.
+
+        &#34;&#34;&#34;
+        for _, file in self.open_files.items():
+            file.close()
+        return
+
+    def _open_file(self, filename):
+        &#34;&#34;&#34;
+        Open specified files from disk.
+
+        Parameters
+        ----------
+        filename : str
+            name of file to be loaded.
+
+        Returns
+        -------
+        flag : bool
+            True if file was successfully opened, False otherwise.
+
+        &#34;&#34;&#34;
+        if filename not in self.open_files:
+            try:
+                self.open_files[filename] = rasterio.open(self.folder_in + filename)
+            except rasterio.errors.RasterioIOError:     # raised if required file not available
+                print(&#34;\r&#34; + &#34;Warning: File &#34; + filename + &#34; not found!&#34;, end=&#34;&#34;)
+                return False
+        return True
+
+    def read_from_file(self, region_to_cut, file):
+        &#34;&#34;&#34;
+        Reads data contained in the specified region from file.
+
+        Parameters
+        ----------
+        region_to_cut : Polygon
+            Region of interest, in XY object coordinates.
+        file : rasterio.DatasetReader
+            file from which data is to be read.
+
+        Returns
+        -------
+        contained_data : np.ndarray
+            extracted raster data.
+        window_trans : rasterio.affine.Affine
+            transform of the extracted raster data section.
+
+        &#34;&#34;&#34;
+        X_min, Y_min, X_max, Y_max = region_to_cut.bounds
+        poly_window = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file.transform)
+        window_trans = windows.transform(poly_window, file.transform)
+        data = file.read(window=poly_window)
+
+        # determine contained pixels
+        contained = features.rasterize([(region_to_cut, 1)], out_shape=data.shape[1:], fill=0, transform=window_trans)
+        contained_data = np.where(contained, data, 0)
+        return contained_data, window_trans
+
+    def cut_geom(self, geom):
+        &#34;&#34;&#34;
+        Cut and save region of passed-in geometry object from raster data.
+        The specified geometry is cropped to the edges of the raster data, if necessary.
+        Output is saved to the Raster_processor&#39;s folder_out.
+
+        Parameters
+        ----------
+        geom : shapely.geometry object
+            geometry object describing the region to be extracted, in EPSG:25832 coordinates.
+
+        Returns
+        -------
+        None.
+
+        &#34;&#34;&#34;
+        with rasterio.Env() as rio_env:
+            if self.glue_multipolys:
+                geom = self.glue_geoms(geom)    # close small gaps in the coverage
+
+            for filename, file in self.open_files.items():
+                
+                # CRS transformation
+                crs_comp = pyproj.CRS.from_user_input(file.crs)
+                DOP2comp = pyproj.transformer.Transformer.from_crs(self.crs_DOP, crs_comp)
+                
+                # transform geom to comparison data CRS
+                vert_coords_transformed = list(DOP2comp.itransform(geom.exterior.coords))
+                vertices_transformed = [Point(X, Y) for X, Y in vert_coords_transformed]
+                geom_transformed = Polygon(vertices_transformed)
+                
+                # crop region to edges of comparison data
+                X_lo, Y_lo, X_hi, Y_hi = file.bounds
+                region_to_cut = geom_transformed.intersection(Polygon([(X_lo, Y_lo), (X_hi, Y_lo), (X_hi, Y_hi), (X_lo, Y_hi)]))
+
+                # if no overlap exists
+                if not region_to_cut:
+                    continue
+
+                contained_data, window_trans = self.read_from_file(region_to_cut, file)
+                # write to new raster file
+                profile = file.profile
+                profile.update(height=contained_data.shape[1],
+                               width=contained_data.shape[2],
+                               transform=window_trans)
+                with rasterio.open(self.folder_out + &#39;cutout_&#39; + filename, &#39;w&#39;, **profile) as dest:
+                    for idx, band_data in enumerate(contained_data, start=1):
+                        dest.write(band_data, idx)
+        return
+
+    def glue_geoms(self, geom):
+        &#34;&#34;&#34;
+        Dilate a collection of geometries iteratively until its members can be merged into a single Polygon.
+        If a single, non-Polygon geometry object is passed, it is dilated and therefore converted to a Polygon.
+        If not all members can be unified into a single Polygon within the dilation limits, an exception is raised.
+
+        Parameters
+        ----------
+        geom : shapely.geometry object
+            geometry collection or single geometry object.
+
+        Returns
+        -------
+        geom : shapely.geometry object
+            single Polygon, if glueing was successful.
+
+        &#34;&#34;&#34;
+        for _ in range(self.max_iter_glue):
+            if isinstance(geom, Polygon):
+                return geom
+
+            geom = geom.buffer(self.glue_dist, resolution=4, cap_style=3, join_style=3)     # dilate by self.glue_dist
+            geom = unary_union([geom])      # try unifiying all members
+
+        if not isinstance(geom, Polygon):
+            raise ValueError(&#34;Dilation limit reached, geometry could not be unified into a single Polygon&#34;)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="satcamsim.input_imgs.Raster_processor.cut_geom"><code class="name flex">
+<span>def <span class="ident">cut_geom</span></span>(<span>self, geom)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Cut and save region of passed-in geometry object from raster data.
+The specified geometry is cropped to the edges of the raster data, if necessary.
+Output is saved to the Raster_processor's folder_out.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>geom</code></strong> :&ensp;<code>shapely.geometry object</code></dt>
+<dd>geometry object describing the region to be extracted, in EPSG:25832 coordinates.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>None.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cut_geom(self, geom):
+    &#34;&#34;&#34;
+    Cut and save region of passed-in geometry object from raster data.
+    The specified geometry is cropped to the edges of the raster data, if necessary.
+    Output is saved to the Raster_processor&#39;s folder_out.
+
+    Parameters
+    ----------
+    geom : shapely.geometry object
+        geometry object describing the region to be extracted, in EPSG:25832 coordinates.
+
+    Returns
+    -------
+    None.
+
+    &#34;&#34;&#34;
+    with rasterio.Env() as rio_env:
+        if self.glue_multipolys:
+            geom = self.glue_geoms(geom)    # close small gaps in the coverage
+
+        for filename, file in self.open_files.items():
+            
+            # CRS transformation
+            crs_comp = pyproj.CRS.from_user_input(file.crs)
+            DOP2comp = pyproj.transformer.Transformer.from_crs(self.crs_DOP, crs_comp)
+            
+            # transform geom to comparison data CRS
+            vert_coords_transformed = list(DOP2comp.itransform(geom.exterior.coords))
+            vertices_transformed = [Point(X, Y) for X, Y in vert_coords_transformed]
+            geom_transformed = Polygon(vertices_transformed)
+            
+            # crop region to edges of comparison data
+            X_lo, Y_lo, X_hi, Y_hi = file.bounds
+            region_to_cut = geom_transformed.intersection(Polygon([(X_lo, Y_lo), (X_hi, Y_lo), (X_hi, Y_hi), (X_lo, Y_hi)]))
+
+            # if no overlap exists
+            if not region_to_cut:
+                continue
+
+            contained_data, window_trans = self.read_from_file(region_to_cut, file)
+            # write to new raster file
+            profile = file.profile
+            profile.update(height=contained_data.shape[1],
+                           width=contained_data.shape[2],
+                           transform=window_trans)
+            with rasterio.open(self.folder_out + &#39;cutout_&#39; + filename, &#39;w&#39;, **profile) as dest:
+                for idx, band_data in enumerate(contained_data, start=1):
+                    dest.write(band_data, idx)
+    return</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.input_imgs.Raster_processor.from_config"><code class="name flex">
+<span>def <span class="ident">from_config</span></span>(<span>config, folder_out)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Initialize Raster_processor with config parameters.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>config</code></strong> :&ensp;<code>Config</code></dt>
+<dd>Config specifying the processor parameters.</dd>
+<dt><strong><code>folder_out</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to output folder for the processor.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>processor</code></strong> :&ensp;<code><a title="satcamsim.input_imgs.Raster_processor" href="#satcamsim.input_imgs.Raster_processor">Raster_processor</a></code></dt>
+<dd>The initialized processor.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def from_config(config, folder_out):
+    &#34;&#34;&#34;
+    Initialize Raster_processor with config parameters.
+
+    Parameters
+    ----------
+    config : Config
+        Config specifying the processor parameters.
+    folder_out : str
+        Path to output folder for the processor.
+
+    Returns
+    -------
+    processor : Raster_processor
+        The initialized processor.
+
+    &#34;&#34;&#34;
+    processor = Raster_processor()
+    processor.gsd_in = config[&#39;GSD_COMP&#39;]
+    processor.folder_in = config[&#39;COMPARE_FOLDER&#39;]
+    processor.filenames = config[&#39;COMP_FILES&#39;]
+
+    # create coordinate reference system
+    processor.crs_DOP = pyproj.CRS(&#34;epsg:25832&#34;)
+
+    processor.folder_out = folder_out
+
+    processor.glue_multipolys = config[&#39;GLUE_MULTIPOLYS&#39;]
+    if processor.glue_multipolys:
+        processor.max_dist_glue = config[&#39;MAX_DIST_GLUE&#39;]
+        processor.max_iter_glue = config[&#39;MAX_ITER_GLUE&#39;]
+        processor.glue_dist = processor.max_dist_glue / processor.max_iter_glue
+
+    return processor</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.input_imgs.Raster_processor.glue_geoms"><code class="name flex">
+<span>def <span class="ident">glue_geoms</span></span>(<span>self, geom)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Dilate a collection of geometries iteratively until its members can be merged into a single Polygon.
+If a single, non-Polygon geometry object is passed, it is dilated and therefore converted to a Polygon.
+If not all members can be unified into a single Polygon within the dilation limits, an exception is raised.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>geom</code></strong> :&ensp;<code>shapely.geometry object</code></dt>
+<dd>geometry collection or single geometry object.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>geom</code></strong> :&ensp;<code>shapely.geometry object</code></dt>
+<dd>single Polygon, if glueing was successful.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def glue_geoms(self, geom):
+    &#34;&#34;&#34;
+    Dilate a collection of geometries iteratively until its members can be merged into a single Polygon.
+    If a single, non-Polygon geometry object is passed, it is dilated and therefore converted to a Polygon.
+    If not all members can be unified into a single Polygon within the dilation limits, an exception is raised.
+
+    Parameters
+    ----------
+    geom : shapely.geometry object
+        geometry collection or single geometry object.
+
+    Returns
+    -------
+    geom : shapely.geometry object
+        single Polygon, if glueing was successful.
+
+    &#34;&#34;&#34;
+    for _ in range(self.max_iter_glue):
+        if isinstance(geom, Polygon):
+            return geom
+
+        geom = geom.buffer(self.glue_dist, resolution=4, cap_style=3, join_style=3)     # dilate by self.glue_dist
+        geom = unary_union([geom])      # try unifiying all members
+
+    if not isinstance(geom, Polygon):
+        raise ValueError(&#34;Dilation limit reached, geometry could not be unified into a single Polygon&#34;)</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.input_imgs.Raster_processor.read_from_file"><code class="name flex">
+<span>def <span class="ident">read_from_file</span></span>(<span>self, region_to_cut, file)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reads data contained in the specified region from file.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>region_to_cut</code></strong> :&ensp;<code>Polygon</code></dt>
+<dd>Region of interest, in XY object coordinates.</dd>
+<dt><strong><code>file</code></strong> :&ensp;<code>rasterio.DatasetReader</code></dt>
+<dd>file from which data is to be read.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>contained_data</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>extracted raster data.</dd>
+<dt><strong><code>window_trans</code></strong> :&ensp;<code>rasterio.affine.Affine</code></dt>
+<dd>transform of the extracted raster data section.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read_from_file(self, region_to_cut, file):
+    &#34;&#34;&#34;
+    Reads data contained in the specified region from file.
+
+    Parameters
+    ----------
+    region_to_cut : Polygon
+        Region of interest, in XY object coordinates.
+    file : rasterio.DatasetReader
+        file from which data is to be read.
+
+    Returns
+    -------
+    contained_data : np.ndarray
+        extracted raster data.
+    window_trans : rasterio.affine.Affine
+        transform of the extracted raster data section.
+
+    &#34;&#34;&#34;
+    X_min, Y_min, X_max, Y_max = region_to_cut.bounds
+    poly_window = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file.transform)
+    window_trans = windows.transform(poly_window, file.transform)
+    data = file.read(window=poly_window)
+
+    # determine contained pixels
+    contained = features.rasterize([(region_to_cut, 1)], out_shape=data.shape[1:], fill=0, transform=window_trans)
+    contained_data = np.where(contained, data, 0)
+    return contained_data, window_trans</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="satcamsim" href="index.html">satcamsim</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="satcamsim.input_imgs.DOP_processor" href="#satcamsim.input_imgs.DOP_processor">DOP_processor</a></code></h4>
+<ul class="">
+<li><code><a title="satcamsim.input_imgs.DOP_processor.from_config" href="#satcamsim.input_imgs.DOP_processor.from_config">from_config</a></code></li>
+<li><code><a title="satcamsim.input_imgs.DOP_processor.get_filenames" href="#satcamsim.input_imgs.DOP_processor.get_filenames">get_filenames</a></code></li>
+<li><code><a title="satcamsim.input_imgs.DOP_processor.read_data" href="#satcamsim.input_imgs.DOP_processor.read_data">read_data</a></code></li>
+<li><code><a title="satcamsim.input_imgs.DOP_processor.sample_area" href="#satcamsim.input_imgs.DOP_processor.sample_area">sample_area</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="satcamsim.input_imgs.Feature_finder" href="#satcamsim.input_imgs.Feature_finder">Feature_finder</a></code></h4>
+<ul class="">
+<li><code><a title="satcamsim.input_imgs.Feature_finder.check" href="#satcamsim.input_imgs.Feature_finder.check">check</a></code></li>
+<li><code><a title="satcamsim.input_imgs.Feature_finder.from_config" href="#satcamsim.input_imgs.Feature_finder.from_config">from_config</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="satcamsim.input_imgs.Raster_processor" href="#satcamsim.input_imgs.Raster_processor">Raster_processor</a></code></h4>
+<ul class="">
+<li><code><a title="satcamsim.input_imgs.Raster_processor.cut_geom" href="#satcamsim.input_imgs.Raster_processor.cut_geom">cut_geom</a></code></li>
+<li><code><a title="satcamsim.input_imgs.Raster_processor.from_config" href="#satcamsim.input_imgs.Raster_processor.from_config">from_config</a></code></li>
+<li><code><a title="satcamsim.input_imgs.Raster_processor.glue_geoms" href="#satcamsim.input_imgs.Raster_processor.glue_geoms">glue_geoms</a></code></li>
+<li><code><a title="satcamsim.input_imgs.Raster_processor.read_from_file" href="#satcamsim.input_imgs.Raster_processor.read_from_file">read_from_file</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

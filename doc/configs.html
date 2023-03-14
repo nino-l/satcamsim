@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>satcamsim.configs API documentation</title>
+<meta name="description" content="Provides default config parameters for different parts of the simulator. To change the defaults, edit this file directly." />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>satcamsim.configs</code></h1>
+</header>
+<section id="section-intro">
+<p>Provides default config parameters for different parts of the simulator. To change the defaults, edit this file directly.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;Provides default config parameters for different parts of the simulator. To change the defaults, edit this file directly.&#34;&#34;&#34;
+from .sim_modes import Sim_modes
+
+NUM_THREADS = 1         #: number of threads, if multithreading (Sim_modes.THREADS) is used
+NUM_PROCESSES = 12       #: number of processes, if multiprocessing (Sim_modes.PROCESSES) is used
+CHUNK_SIZE = 2**16 * 3  #: size of partial images stored in temp files in pixels, if Sim_modes.CHUNKS is used
+
+#: tuple of `sim_modes.Sim_modes`. Control order of and toggle multiprocessing, multithreading, creation of temp files. must end with Sim_modes.DEFAULT
+SIM_MODES = (Sim_modes.PROCESSES,
+             Sim_modes.DEFAULT,)
+
+#: path to a folder where outputs should be saved.
+OUTPUT_FOLDER = &#39;path/to/output/folder/&#39;
+
+#: path to a folder where temp files should be saved.
+TEMP_FOLDER = OUTPUT_FOLDER
+
+MEAN_TERRAIN_HEIGHT = 0     #: Z_terrain for simulating images and finding GCPs
+APPROX_VIEW_ANGLE = 2.22    #: approximate angle of view of the camera. used only for GCP localization
+
+#: maximum expected off-nadir roll angle (in degrees) over the entire swath.
+#: Lower angle speeds up 3D GCP localization, but if higher roll angles occur, GCPs may be missed.
+MAX_ROLL_ANGLE = 1
+
+
+def dop40_filename(X_B, Y_B):
+    &#34;&#34;&#34;
+    Generate filenames for DOP with 40cm GSD.
+
+    Parameters
+    ----------
+    X_B : int
+        X coordinate of SE tile corner.
+    Y_B : int
+        Y coordinate of SE tile corner.
+
+    Returns
+    -------
+    filename : str
+        Filename of the DOP tile with SE corner (X_B, Y_B).
+
+    &#34;&#34;&#34;
+    return f&#39;32{int(X_B/1000)}_{int(Y_B/1000)}.tif&#39;
+
+
+DOP_FOLDER = &#39;path/to/DOP/folder/&#39;  #: path to folder containing DOP images.
+FILENAME_FORMAT = dop40_filename  #: callable returning a valid filename string for arguments X_B, Y_B. Set to `dop20_filename` for Zugspitze, `dop40_filename` for Ansbach
+GSD_DOP = 0.4                     #: GSD of used DOP file
+
+COUNT_R = 2500          #: height of DOP tile in pixels
+COUNT_C = 2500          #: width of DOP tile in pixels
+MAX_OPEN_FILES = 23     #: max number of DOP files open at the same time
+
+NOISY = True            #: toggle noise in degraded image
+
+FIND_FEATURES = True    #: toggle localization of GCPs
+FEATURE_CSV_PATH_2D = &#39;path/to/csv/with/2D/GCPs.csv&#39;  #: path to .csv with 2D GCPs. File format specified in `input_imgs.Feature_finder`.
+FEATURE_CSV_PATH_3D = &#39;path/to/csv/with/3D/GCPs.csv&#39;  #: path to .csv with 3D GCPs. File format specified in `input_imgs.Feature_finder`.
+
+
+COMPARE_FOLDER = &#39;path/to/raster/data/for/comparisons/&#39;  #: path to folder containing raster data for comparison.
+GSD_COMP = 3              #: ground sampling distance of comparison data, in meters
+COMP_FILES = None         #: list of filenames for comparison data, or None to use all files in the `COMPARE_FOLDER`
+GLUE_MULTIPOLYS = True      #: try to close small gaps in the ground coverage by dilating it up to MAX_DIST_GLUE
+MAX_ITER_GLUE = 30
+MAX_DIST_GLUE = .5          #: maximum dilation of ground track coverage in meters</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-variables">Global variables</h2>
+<dl>
+<dt id="satcamsim.configs.APPROX_VIEW_ANGLE"><code class="name">var <span class="ident">APPROX_VIEW_ANGLE</span></code></dt>
+<dd>
+<div class="desc"><p>approximate angle of view of the camera. used only for GCP localization</p></div>
+</dd>
+<dt id="satcamsim.configs.CHUNK_SIZE"><code class="name">var <span class="ident">CHUNK_SIZE</span></code></dt>
+<dd>
+<div class="desc"><p>size of partial images stored in temp files in pixels, if Sim_modes.CHUNKS is used</p></div>
+</dd>
+<dt id="satcamsim.configs.COMPARE_FOLDER"><code class="name">var <span class="ident">COMPARE_FOLDER</span></code></dt>
+<dd>
+<div class="desc"><p>path to folder containing raster data for comparison.</p></div>
+</dd>
+<dt id="satcamsim.configs.COMP_FILES"><code class="name">var <span class="ident">COMP_FILES</span></code></dt>
+<dd>
+<div class="desc"><p>list of filenames for comparison data, or None to use all files in the <code><a title="satcamsim.configs.COMPARE_FOLDER" href="#satcamsim.configs.COMPARE_FOLDER">COMPARE_FOLDER</a></code></p></div>
+</dd>
+<dt id="satcamsim.configs.COUNT_C"><code class="name">var <span class="ident">COUNT_C</span></code></dt>
+<dd>
+<div class="desc"><p>width of DOP tile in pixels</p></div>
+</dd>
+<dt id="satcamsim.configs.COUNT_R"><code class="name">var <span class="ident">COUNT_R</span></code></dt>
+<dd>
+<div class="desc"><p>height of DOP tile in pixels</p></div>
+</dd>
+<dt id="satcamsim.configs.DOP_FOLDER"><code class="name">var <span class="ident">DOP_FOLDER</span></code></dt>
+<dd>
+<div class="desc"><p>path to folder containing DOP images.</p></div>
+</dd>
+<dt id="satcamsim.configs.FEATURE_CSV_PATH_2D"><code class="name">var <span class="ident">FEATURE_CSV_PATH_2D</span></code></dt>
+<dd>
+<div class="desc"><p>path to .csv with 2D GCPs. File format specified in <code>input_imgs.Feature_finder</code>.</p></div>
+</dd>
+<dt id="satcamsim.configs.FEATURE_CSV_PATH_3D"><code class="name">var <span class="ident">FEATURE_CSV_PATH_3D</span></code></dt>
+<dd>
+<div class="desc"><p>path to .csv with 3D GCPs. File format specified in <code>input_imgs.Feature_finder</code>.</p></div>
+</dd>
+<dt id="satcamsim.configs.FIND_FEATURES"><code class="name">var <span class="ident">FIND_FEATURES</span></code></dt>
+<dd>
+<div class="desc"><p>toggle localization of GCPs</p></div>
+</dd>
+<dt id="satcamsim.configs.GLUE_MULTIPOLYS"><code class="name">var <span class="ident">GLUE_MULTIPOLYS</span></code></dt>
+<dd>
+<div class="desc"><p>try to close small gaps in the ground coverage by dilating it up to MAX_DIST_GLUE</p></div>
+</dd>
+<dt id="satcamsim.configs.GSD_COMP"><code class="name">var <span class="ident">GSD_COMP</span></code></dt>
+<dd>
+<div class="desc"><p>ground sampling distance of comparison data, in meters</p></div>
+</dd>
+<dt id="satcamsim.configs.GSD_DOP"><code class="name">var <span class="ident">GSD_DOP</span></code></dt>
+<dd>
+<div class="desc"><p>GSD of used DOP file</p></div>
+</dd>
+<dt id="satcamsim.configs.MAX_DIST_GLUE"><code class="name">var <span class="ident">MAX_DIST_GLUE</span></code></dt>
+<dd>
+<div class="desc"><p>maximum dilation of ground track coverage in meters</p></div>
+</dd>
+<dt id="satcamsim.configs.MAX_OPEN_FILES"><code class="name">var <span class="ident">MAX_OPEN_FILES</span></code></dt>
+<dd>
+<div class="desc"><p>max number of DOP files open at the same time</p></div>
+</dd>
+<dt id="satcamsim.configs.MAX_ROLL_ANGLE"><code class="name">var <span class="ident">MAX_ROLL_ANGLE</span></code></dt>
+<dd>
+<div class="desc"><p>maximum expected off-nadir roll angle (in degrees) over the entire swath.
+Lower angle speeds up 3D GCP localization, but if higher roll angles occur, GCPs may be missed.</p></div>
+</dd>
+<dt id="satcamsim.configs.MEAN_TERRAIN_HEIGHT"><code class="name">var <span class="ident">MEAN_TERRAIN_HEIGHT</span></code></dt>
+<dd>
+<div class="desc"><p>Z_terrain for simulating images and finding GCPs</p></div>
+</dd>
+<dt id="satcamsim.configs.NOISY"><code class="name">var <span class="ident">NOISY</span></code></dt>
+<dd>
+<div class="desc"><p>toggle noise in degraded image</p></div>
+</dd>
+<dt id="satcamsim.configs.NUM_PROCESSES"><code class="name">var <span class="ident">NUM_PROCESSES</span></code></dt>
+<dd>
+<div class="desc"><p>number of processes, if multiprocessing (Sim_modes.PROCESSES) is used</p></div>
+</dd>
+<dt id="satcamsim.configs.NUM_THREADS"><code class="name">var <span class="ident">NUM_THREADS</span></code></dt>
+<dd>
+<div class="desc"><p>number of threads, if multithreading (Sim_modes.THREADS) is used</p></div>
+</dd>
+<dt id="satcamsim.configs.OUTPUT_FOLDER"><code class="name">var <span class="ident">OUTPUT_FOLDER</span></code></dt>
+<dd>
+<div class="desc"><p>path to a folder where outputs should be saved.</p></div>
+</dd>
+<dt id="satcamsim.configs.SIM_MODES"><code class="name">var <span class="ident">SIM_MODES</span></code></dt>
+<dd>
+<div class="desc"><p>tuple of <code>sim_modes.Sim_modes</code>. Control order of and toggle multiprocessing, multithreading, creation of temp files. must end with Sim_modes.DEFAULT</p></div>
+</dd>
+<dt id="satcamsim.configs.TEMP_FOLDER"><code class="name">var <span class="ident">TEMP_FOLDER</span></code></dt>
+<dd>
+<div class="desc"><p>path to a folder where temp files should be saved.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="satcamsim.configs.FILENAME_FORMAT"><code class="name flex">
+<span>def <span class="ident">FILENAME_FORMAT</span></span>(<span>X_B, Y_B)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Generate filenames for DOP with 40cm GSD.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>X_B</code></strong> :&ensp;<code>int</code></dt>
+<dd>X coordinate of SE tile corner.</dd>
+<dt><strong><code>Y_B</code></strong> :&ensp;<code>int</code></dt>
+<dd>Y coordinate of SE tile corner.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>filename</code></strong> :&ensp;<code>str</code></dt>
+<dd>Filename of the DOP tile with SE corner (X_B, Y_B).</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def dop40_filename(X_B, Y_B):
+    &#34;&#34;&#34;
+    Generate filenames for DOP with 40cm GSD.
+
+    Parameters
+    ----------
+    X_B : int
+        X coordinate of SE tile corner.
+    Y_B : int
+        Y coordinate of SE tile corner.
+
+    Returns
+    -------
+    filename : str
+        Filename of the DOP tile with SE corner (X_B, Y_B).
+
+    &#34;&#34;&#34;
+    return f&#39;32{int(X_B/1000)}_{int(Y_B/1000)}.tif&#39;</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.configs.dop40_filename"><code class="name flex">
+<span>def <span class="ident">dop40_filename</span></span>(<span>X_B, Y_B)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Generate filenames for DOP with 40cm GSD.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>X_B</code></strong> :&ensp;<code>int</code></dt>
+<dd>X coordinate of SE tile corner.</dd>
+<dt><strong><code>Y_B</code></strong> :&ensp;<code>int</code></dt>
+<dd>Y coordinate of SE tile corner.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>filename</code></strong> :&ensp;<code>str</code></dt>
+<dd>Filename of the DOP tile with SE corner (X_B, Y_B).</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def dop40_filename(X_B, Y_B):
+    &#34;&#34;&#34;
+    Generate filenames for DOP with 40cm GSD.
+
+    Parameters
+    ----------
+    X_B : int
+        X coordinate of SE tile corner.
+    Y_B : int
+        Y coordinate of SE tile corner.
+
+    Returns
+    -------
+    filename : str
+        Filename of the DOP tile with SE corner (X_B, Y_B).
+
+    &#34;&#34;&#34;
+    return f&#39;32{int(X_B/1000)}_{int(Y_B/1000)}.tif&#39;</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="satcamsim" href="index.html">satcamsim</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-variables">Global variables</a></h3>
+<ul class="two-column">
+<li><code><a title="satcamsim.configs.APPROX_VIEW_ANGLE" href="#satcamsim.configs.APPROX_VIEW_ANGLE">APPROX_VIEW_ANGLE</a></code></li>
+<li><code><a title="satcamsim.configs.CHUNK_SIZE" href="#satcamsim.configs.CHUNK_SIZE">CHUNK_SIZE</a></code></li>
+<li><code><a title="satcamsim.configs.COMPARE_FOLDER" href="#satcamsim.configs.COMPARE_FOLDER">COMPARE_FOLDER</a></code></li>
+<li><code><a title="satcamsim.configs.COMP_FILES" href="#satcamsim.configs.COMP_FILES">COMP_FILES</a></code></li>
+<li><code><a title="satcamsim.configs.COUNT_C" href="#satcamsim.configs.COUNT_C">COUNT_C</a></code></li>
+<li><code><a title="satcamsim.configs.COUNT_R" href="#satcamsim.configs.COUNT_R">COUNT_R</a></code></li>
+<li><code><a title="satcamsim.configs.DOP_FOLDER" href="#satcamsim.configs.DOP_FOLDER">DOP_FOLDER</a></code></li>
+<li><code><a title="satcamsim.configs.FEATURE_CSV_PATH_2D" href="#satcamsim.configs.FEATURE_CSV_PATH_2D">FEATURE_CSV_PATH_2D</a></code></li>
+<li><code><a title="satcamsim.configs.FEATURE_CSV_PATH_3D" href="#satcamsim.configs.FEATURE_CSV_PATH_3D">FEATURE_CSV_PATH_3D</a></code></li>
+<li><code><a title="satcamsim.configs.FIND_FEATURES" href="#satcamsim.configs.FIND_FEATURES">FIND_FEATURES</a></code></li>
+<li><code><a title="satcamsim.configs.GLUE_MULTIPOLYS" href="#satcamsim.configs.GLUE_MULTIPOLYS">GLUE_MULTIPOLYS</a></code></li>
+<li><code><a title="satcamsim.configs.GSD_COMP" href="#satcamsim.configs.GSD_COMP">GSD_COMP</a></code></li>
+<li><code><a title="satcamsim.configs.GSD_DOP" href="#satcamsim.configs.GSD_DOP">GSD_DOP</a></code></li>
+<li><code><a title="satcamsim.configs.MAX_DIST_GLUE" href="#satcamsim.configs.MAX_DIST_GLUE">MAX_DIST_GLUE</a></code></li>
+<li><code><a title="satcamsim.configs.MAX_OPEN_FILES" href="#satcamsim.configs.MAX_OPEN_FILES">MAX_OPEN_FILES</a></code></li>
+<li><code><a title="satcamsim.configs.MAX_ROLL_ANGLE" href="#satcamsim.configs.MAX_ROLL_ANGLE">MAX_ROLL_ANGLE</a></code></li>
+<li><code><a title="satcamsim.configs.MEAN_TERRAIN_HEIGHT" href="#satcamsim.configs.MEAN_TERRAIN_HEIGHT">MEAN_TERRAIN_HEIGHT</a></code></li>
+<li><code><a title="satcamsim.configs.NOISY" href="#satcamsim.configs.NOISY">NOISY</a></code></li>
+<li><code><a title="satcamsim.configs.NUM_PROCESSES" href="#satcamsim.configs.NUM_PROCESSES">NUM_PROCESSES</a></code></li>
+<li><code><a title="satcamsim.configs.NUM_THREADS" href="#satcamsim.configs.NUM_THREADS">NUM_THREADS</a></code></li>
+<li><code><a title="satcamsim.configs.OUTPUT_FOLDER" href="#satcamsim.configs.OUTPUT_FOLDER">OUTPUT_FOLDER</a></code></li>
+<li><code><a title="satcamsim.configs.SIM_MODES" href="#satcamsim.configs.SIM_MODES">SIM_MODES</a></code></li>
+<li><code><a title="satcamsim.configs.TEMP_FOLDER" href="#satcamsim.configs.TEMP_FOLDER">TEMP_FOLDER</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="satcamsim.configs.FILENAME_FORMAT" href="#satcamsim.configs.FILENAME_FORMAT">FILENAME_FORMAT</a></code></li>
+<li><code><a title="satcamsim.configs.dop40_filename" href="#satcamsim.configs.dop40_filename">dop40_filename</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

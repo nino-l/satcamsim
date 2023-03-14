@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>satcamsim.mtf API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>satcamsim.mtf</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import numpy as np
+import scipy.fftpack as sfft
+
+H = 469600      # avg altitude above ground [m]
+gsd_y = 3.59    # avg GSD in flight direction [m]
+
+w_px = 6e-6   # pixel size [m]
+t_int = 1 / 2000    # integration time [s]
+t_s = 1 / 2000  # sample time [s]
+f = .65         # effective focal length [m]
+
+p_x = w_px      # across-sensor pixel pitch [m]
+p_y = w_px      # pitch between TDI stages [m]
+p_y_eff = gsd_y * f / H     # effective along-flight pixel pitch [m]
+v_y = gsd_y / t_s   # avg in-flight velocity [m/s]
+
+D = .105        # primary aperture [m]
+D_obs = .05   # obscuration mirror diameter [m]
+F = f / D       # F number
+eps = D_obs / D
+k_Nyq_x = 1 / (2 * p_x)
+k_Nyq_y = 1 / (2 * p_y_eff)
+
+Aa = 0      # atmospheric absorption [km^-1]
+Sa = .25e-3 # atmospheric scattering [km^-1]
+z = 6.6     # optical path length [km]
+
+W_RMS = .1    # wavefront error RMS
+
+sigma_jitter = 0.6e-6   # jitter standard deviation [m]
+
+l_diffusion = 60e-6     # diffusion length [m]
+l_depl = 6e-6         # depletion width [m]
+alpha = 1e6             # absorption coefficient
+
+theta = np.deg2rad(.3)  # angle between direction of flight/orientation of TDI stages [rad]
+d_vy = 60e-6            # velocity mismatch between satellite movement/TDI charge transfer in y direction [m/s]
+N_TDI = 16              # number of TDI stages
+
+d_smear = v_y * t_int * f / H
+
+
+def MTF_atmosphere(k_x, k_y, lbda, k_co):
+    k_r = np.sqrt(k_x**2 + k_y**2)
+    r_0 = 0.185 * lbda**1.2 * (.75 * H**(-1 / 3) * 4.16e-13)**-.6
+    turb = np.exp(-3.44 * (lbda * f * k_r / r_0)**(5 / 3) * (1 - .5 * (lbda * f * k_r / D)**(1 / 3)))
+    sol = np.exp(-Aa * z - Sa * z * np.minimum((k_r / k_co)**2, 1))
+    return turb * sol
+
+
+def MTF_diffraction(k_x, k_y, k_co):
+    k_r = np.sqrt(k_x**2 + k_y**2)
+    k_n = k_r / k_co
+
+    def C_simple(k_n):
+        if k_n &lt;= (1 - eps) / 2:
+            return - np.pi * eps**2
+        elif k_n &lt;= (1 + eps) / 2:
+            phi = np.arccos((1 + eps**2 - 4 * k_n**2) / (2 * eps))
+            return - np.pi * eps**2 + eps * np.sin(phi) + .5 * phi * (1 + eps**2) - (1 - eps**2) * np.arctan((1 + eps) / (1 - eps) * np.tan(.5 * phi))
+        else:
+            return 0
+    C = np.vectorize(C_simple)
+
+    def B_simple(k_n):
+        if k_n &lt;= eps:
+            return eps**2 * (np.arccos(k_n / eps) - k_n / eps * np.sqrt(1 - (k_n / eps)**2))
+        else:
+            return 0
+    B = np.vectorize(B_simple)
+
+    def A_simple(k_n):
+        if k_n &lt; 1:
+            return np.arccos(k_n) - k_n * np.sqrt(1 - k_n**2)
+        else:
+            return 0
+    A = np.vectorize(A_simple)
+
+    return 2 / np.pi * (A(k_n) + B(k_n) + C(k_n)) / (1 - eps**2)
+
+
+def MTF_WFE(k_x, k_y, k_co):
+    k_r = np.sqrt(k_x**2 + k_y**2)
+    return 1 - (W_RMS / .18)**2 * (1 - 4 * (k_r / k_co - .5)**2)
+
+
+def MTF_aperture_y(k_x, k_y):
+    return abs(np.sinc(k_y * w_px))
+
+
+def MTF_jitter(k_x, k_y):
+    k_r = np.sqrt(k_x**2 + k_y**2)
+    return np.exp(-2 * np.pi**2 * sigma_jitter**2 * k_r**2)
+
+
+def MTF_diffusion(k_x, k_y):
+    k_r = np.sqrt(k_x**2 + k_y**2)
+    L = l_diffusion / (np.sqrt(1 + (2 * np.pi * l_diffusion)**2 * k_r**2))
+    return (1 - np.exp(-alpha * l_depl) / (1 + alpha * L)) / (1 - np.exp(-alpha * l_depl) / (1 + alpha * l_diffusion))
+
+
+def MTF_TDI_theta(k_x, k_y):
+    def TDI_theta_simple(k_x):
+        if k_x and theta:
+            return abs(np.sin(np.pi * N_TDI * w_px * np.tan(theta) * k_x) / (N_TDI * np.sin(np.pi * w_px * np.tan(theta) * k_x)))
+        else:
+            return 1
+
+    return np.vectorize(TDI_theta_simple)(k_x)
+
+
+def MTF_TDI_dv(k_x, k_y):
+    def TDI_dvy_simple(k_y):
+        if k_y and d_vy:
+            return abs(np.sin(np.pi * N_TDI * d_vy * t_int * k_y) / (N_TDI * np.sin(np.pi * d_vy * t_int * k_y)))
+        else:
+            return 1
+    return np.vectorize(TDI_dvy_simple)(k_y)
+
+
+def MTF_sampling(k_x, k_y): return abs(np.sinc(k_x / (2 * k_Nyq_x)) * np.sinc(k_y / (2 * k_Nyq_y)))
+
+
+def MTF_smear(k_x, k_y): return abs(np.sinc(d_smear * k_y))
+
+
+def MTF_aperture_x(k_x, k_y):
+    return abs(np.sinc(k_x * w_px))
+
+
+def MTF_sim(k_x, k_y, lbda):
+    k_co = 1 / (lbda * F)
+    return MTF_atmosphere(k_x, k_y, lbda, k_co) * MTF_diffraction(k_x, k_y, k_co) * MTF_WFE(k_x, k_y, k_co) * MTF_jitter(k_x, k_y) * MTF_aperture_y(k_x, k_y) * MTF_diffusion(k_x, k_y) * MTF_TDI_dv(k_x, k_y) * MTF_TDI_theta(k_x, k_y)
+
+
+def MTF_tot(k_x, k_y, lbda):
+    return MTF_sim(k_x, k_y, lbda) * MTF_sampling(k_x, k_y) * MTF_smear(k_x, k_y) * MTF_aperture_x(k_x, k_y)
+
+def get_PSF():
+    &#34;&#34;&#34;
+    Computes MTF based on imaging chain approach, and Fourier-transforms it into PSF.
+    Computations for RGB bands at 665, 560, and 490 nm.
+    Note that parameters can only be adjusted directly in the mtf.py file for now.
+
+    Returns
+    -------
+    PSF : np.ndarray
+        filter mask corresponding to PSF, sampled at pixel grid nodes.
+
+    &#34;&#34;&#34;
+
+    n_samples = 250  # must be even!
+    f_max = 2 / w_px
+
+    k_x = np.linspace(1, f_max, int(n_samples / 2))
+    k_x = np.append(k_x, k_x[:0:-1])
+    k_y = np.linspace(1, f_max, int(n_samples / 2))
+    k_y = np.append(k_y, k_y[:0:-1])
+    kk_x, kk_y = np.meshgrid(k_x, k_y)
+
+    PSF_2Ds = []
+    lambdas = [665e-9, 560e-9, 490e-9]
+    for lbda in lambdas:
+        MTF_2D = MTF_sim(kk_x, kk_y, lbda)
+        PSF_2Ds.append(np.fft.ifftshift(np.fft.ifft2(MTF_2D).real))
+
+    PSF = np.array(PSF_2Ds)
+    return PSF
+
+
+def trim_PSF(psf, size):
+    &#34;&#34;&#34;
+    Trims PSF filter to approximately size*size central elements.
+
+    Parameters
+    ----------
+    psf : np.ndarray
+        array containing PSF filter.
+    size : int
+        preferred size of filter mask.
+
+    Returns
+    -------
+    trimmed : np.ndarray
+        array containing PSF filter, trimmed to approximately size*size.
+
+    &#34;&#34;&#34;
+    wid = int(size / 2)
+    _, nx, ny = psf.shape
+    trimmed = psf[:, int(nx / 2) - wid + 1: int(nx / 2) + wid + 2, int(ny / 2) - wid + 1: int(ny / 2) + wid + 2]
+    trimmed *= (psf.sum(axis=(1, 2)) / trimmed.sum(axis=(1, 2)))[:, None, None]
+    return trimmed</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="satcamsim.mtf.MTF_TDI_dv"><code class="name flex">
+<span>def <span class="ident">MTF_TDI_dv</span></span>(<span>k_x, k_y)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def MTF_TDI_dv(k_x, k_y):
+    def TDI_dvy_simple(k_y):
+        if k_y and d_vy:
+            return abs(np.sin(np.pi * N_TDI * d_vy * t_int * k_y) / (N_TDI * np.sin(np.pi * d_vy * t_int * k_y)))
+        else:
+            return 1
+    return np.vectorize(TDI_dvy_simple)(k_y)</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.mtf.MTF_TDI_theta"><code class="name flex">
+<span>def <span class="ident">MTF_TDI_theta</span></span>(<span>k_x, k_y)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def MTF_TDI_theta(k_x, k_y):
+    def TDI_theta_simple(k_x):
+        if k_x and theta:
+            return abs(np.sin(np.pi * N_TDI * w_px * np.tan(theta) * k_x) / (N_TDI * np.sin(np.pi * w_px * np.tan(theta) * k_x)))
+        else:
+            return 1
+
+    return np.vectorize(TDI_theta_simple)(k_x)</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.mtf.MTF_WFE"><code class="name flex">
+<span>def <span class="ident">MTF_WFE</span></span>(<span>k_x, k_y, k_co)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def MTF_WFE(k_x, k_y, k_co):
+    k_r = np.sqrt(k_x**2 + k_y**2)
+    return 1 - (W_RMS / .18)**2 * (1 - 4 * (k_r / k_co - .5)**2)</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.mtf.MTF_aperture_x"><code class="name flex">
+<span>def <span class="ident">MTF_aperture_x</span></span>(<span>k_x, k_y)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def MTF_aperture_x(k_x, k_y):
+    return abs(np.sinc(k_x * w_px))</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.mtf.MTF_aperture_y"><code class="name flex">
+<span>def <span class="ident">MTF_aperture_y</span></span>(<span>k_x, k_y)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def MTF_aperture_y(k_x, k_y):
+    return abs(np.sinc(k_y * w_px))</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.mtf.MTF_atmosphere"><code class="name flex">
+<span>def <span class="ident">MTF_atmosphere</span></span>(<span>k_x, k_y, lbda, k_co)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def MTF_atmosphere(k_x, k_y, lbda, k_co):
+    k_r = np.sqrt(k_x**2 + k_y**2)
+    r_0 = 0.185 * lbda**1.2 * (.75 * H**(-1 / 3) * 4.16e-13)**-.6
+    turb = np.exp(-3.44 * (lbda * f * k_r / r_0)**(5 / 3) * (1 - .5 * (lbda * f * k_r / D)**(1 / 3)))
+    sol = np.exp(-Aa * z - Sa * z * np.minimum((k_r / k_co)**2, 1))
+    return turb * sol</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.mtf.MTF_diffraction"><code class="name flex">
+<span>def <span class="ident">MTF_diffraction</span></span>(<span>k_x, k_y, k_co)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def MTF_diffraction(k_x, k_y, k_co):
+    k_r = np.sqrt(k_x**2 + k_y**2)
+    k_n = k_r / k_co
+
+    def C_simple(k_n):
+        if k_n &lt;= (1 - eps) / 2:
+            return - np.pi * eps**2
+        elif k_n &lt;= (1 + eps) / 2:
+            phi = np.arccos((1 + eps**2 - 4 * k_n**2) / (2 * eps))
+            return - np.pi * eps**2 + eps * np.sin(phi) + .5 * phi * (1 + eps**2) - (1 - eps**2) * np.arctan((1 + eps) / (1 - eps) * np.tan(.5 * phi))
+        else:
+            return 0
+    C = np.vectorize(C_simple)
+
+    def B_simple(k_n):
+        if k_n &lt;= eps:
+            return eps**2 * (np.arccos(k_n / eps) - k_n / eps * np.sqrt(1 - (k_n / eps)**2))
+        else:
+            return 0
+    B = np.vectorize(B_simple)
+
+    def A_simple(k_n):
+        if k_n &lt; 1:
+            return np.arccos(k_n) - k_n * np.sqrt(1 - k_n**2)
+        else:
+            return 0
+    A = np.vectorize(A_simple)
+
+    return 2 / np.pi * (A(k_n) + B(k_n) + C(k_n)) / (1 - eps**2)</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.mtf.MTF_diffusion"><code class="name flex">
+<span>def <span class="ident">MTF_diffusion</span></span>(<span>k_x, k_y)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def MTF_diffusion(k_x, k_y):
+    k_r = np.sqrt(k_x**2 + k_y**2)
+    L = l_diffusion / (np.sqrt(1 + (2 * np.pi * l_diffusion)**2 * k_r**2))
+    return (1 - np.exp(-alpha * l_depl) / (1 + alpha * L)) / (1 - np.exp(-alpha * l_depl) / (1 + alpha * l_diffusion))</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.mtf.MTF_jitter"><code class="name flex">
+<span>def <span class="ident">MTF_jitter</span></span>(<span>k_x, k_y)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def MTF_jitter(k_x, k_y):
+    k_r = np.sqrt(k_x**2 + k_y**2)
+    return np.exp(-2 * np.pi**2 * sigma_jitter**2 * k_r**2)</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.mtf.MTF_sampling"><code class="name flex">
+<span>def <span class="ident">MTF_sampling</span></span>(<span>k_x, k_y)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def MTF_sampling(k_x, k_y): return abs(np.sinc(k_x / (2 * k_Nyq_x)) * np.sinc(k_y / (2 * k_Nyq_y)))</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.mtf.MTF_sim"><code class="name flex">
+<span>def <span class="ident">MTF_sim</span></span>(<span>k_x, k_y, lbda)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def MTF_sim(k_x, k_y, lbda):
+    k_co = 1 / (lbda * F)
+    return MTF_atmosphere(k_x, k_y, lbda, k_co) * MTF_diffraction(k_x, k_y, k_co) * MTF_WFE(k_x, k_y, k_co) * MTF_jitter(k_x, k_y) * MTF_aperture_y(k_x, k_y) * MTF_diffusion(k_x, k_y) * MTF_TDI_dv(k_x, k_y) * MTF_TDI_theta(k_x, k_y)</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.mtf.MTF_smear"><code class="name flex">
+<span>def <span class="ident">MTF_smear</span></span>(<span>k_x, k_y)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def MTF_smear(k_x, k_y): return abs(np.sinc(d_smear * k_y))</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.mtf.MTF_tot"><code class="name flex">
+<span>def <span class="ident">MTF_tot</span></span>(<span>k_x, k_y, lbda)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def MTF_tot(k_x, k_y, lbda):
+    return MTF_sim(k_x, k_y, lbda) * MTF_sampling(k_x, k_y) * MTF_smear(k_x, k_y) * MTF_aperture_x(k_x, k_y)</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.mtf.get_PSF"><code class="name flex">
+<span>def <span class="ident">get_PSF</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Computes MTF based on imaging chain approach, and Fourier-transforms it into PSF.
+Computations for RGB bands at 665, 560, and 490 nm.
+Note that parameters can only be adjusted directly in the mtf.py file for now.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>PSF</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>filter mask corresponding to PSF, sampled at pixel grid nodes.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_PSF():
+    &#34;&#34;&#34;
+    Computes MTF based on imaging chain approach, and Fourier-transforms it into PSF.
+    Computations for RGB bands at 665, 560, and 490 nm.
+    Note that parameters can only be adjusted directly in the mtf.py file for now.
+
+    Returns
+    -------
+    PSF : np.ndarray
+        filter mask corresponding to PSF, sampled at pixel grid nodes.
+
+    &#34;&#34;&#34;
+
+    n_samples = 250  # must be even!
+    f_max = 2 / w_px
+
+    k_x = np.linspace(1, f_max, int(n_samples / 2))
+    k_x = np.append(k_x, k_x[:0:-1])
+    k_y = np.linspace(1, f_max, int(n_samples / 2))
+    k_y = np.append(k_y, k_y[:0:-1])
+    kk_x, kk_y = np.meshgrid(k_x, k_y)
+
+    PSF_2Ds = []
+    lambdas = [665e-9, 560e-9, 490e-9]
+    for lbda in lambdas:
+        MTF_2D = MTF_sim(kk_x, kk_y, lbda)
+        PSF_2Ds.append(np.fft.ifftshift(np.fft.ifft2(MTF_2D).real))
+
+    PSF = np.array(PSF_2Ds)
+    return PSF</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.mtf.trim_PSF"><code class="name flex">
+<span>def <span class="ident">trim_PSF</span></span>(<span>psf, size)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Trims PSF filter to approximately size*size central elements.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>psf</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>array containing PSF filter.</dd>
+<dt><strong><code>size</code></strong> :&ensp;<code>int</code></dt>
+<dd>preferred size of filter mask.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>trimmed</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>array containing PSF filter, trimmed to approximately size*size.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def trim_PSF(psf, size):
+    &#34;&#34;&#34;
+    Trims PSF filter to approximately size*size central elements.
+
+    Parameters
+    ----------
+    psf : np.ndarray
+        array containing PSF filter.
+    size : int
+        preferred size of filter mask.
+
+    Returns
+    -------
+    trimmed : np.ndarray
+        array containing PSF filter, trimmed to approximately size*size.
+
+    &#34;&#34;&#34;
+    wid = int(size / 2)
+    _, nx, ny = psf.shape
+    trimmed = psf[:, int(nx / 2) - wid + 1: int(nx / 2) + wid + 2, int(ny / 2) - wid + 1: int(ny / 2) + wid + 2]
+    trimmed *= (psf.sum(axis=(1, 2)) / trimmed.sum(axis=(1, 2)))[:, None, None]
+    return trimmed</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="satcamsim" href="index.html">satcamsim</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="two-column">
+<li><code><a title="satcamsim.mtf.MTF_TDI_dv" href="#satcamsim.mtf.MTF_TDI_dv">MTF_TDI_dv</a></code></li>
+<li><code><a title="satcamsim.mtf.MTF_TDI_theta" href="#satcamsim.mtf.MTF_TDI_theta">MTF_TDI_theta</a></code></li>
+<li><code><a title="satcamsim.mtf.MTF_WFE" href="#satcamsim.mtf.MTF_WFE">MTF_WFE</a></code></li>
+<li><code><a title="satcamsim.mtf.MTF_aperture_x" href="#satcamsim.mtf.MTF_aperture_x">MTF_aperture_x</a></code></li>
+<li><code><a title="satcamsim.mtf.MTF_aperture_y" href="#satcamsim.mtf.MTF_aperture_y">MTF_aperture_y</a></code></li>
+<li><code><a title="satcamsim.mtf.MTF_atmosphere" href="#satcamsim.mtf.MTF_atmosphere">MTF_atmosphere</a></code></li>
+<li><code><a title="satcamsim.mtf.MTF_diffraction" href="#satcamsim.mtf.MTF_diffraction">MTF_diffraction</a></code></li>
+<li><code><a title="satcamsim.mtf.MTF_diffusion" href="#satcamsim.mtf.MTF_diffusion">MTF_diffusion</a></code></li>
+<li><code><a title="satcamsim.mtf.MTF_jitter" href="#satcamsim.mtf.MTF_jitter">MTF_jitter</a></code></li>
+<li><code><a title="satcamsim.mtf.MTF_sampling" href="#satcamsim.mtf.MTF_sampling">MTF_sampling</a></code></li>
+<li><code><a title="satcamsim.mtf.MTF_sim" href="#satcamsim.mtf.MTF_sim">MTF_sim</a></code></li>
+<li><code><a title="satcamsim.mtf.MTF_smear" href="#satcamsim.mtf.MTF_smear">MTF_smear</a></code></li>
+<li><code><a title="satcamsim.mtf.MTF_tot" href="#satcamsim.mtf.MTF_tot">MTF_tot</a></code></li>
+<li><code><a title="satcamsim.mtf.get_PSF" href="#satcamsim.mtf.get_PSF">get_PSF</a></code></li>
+<li><code><a title="satcamsim.mtf.trim_PSF" href="#satcamsim.mtf.trim_PSF">trim_PSF</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
