@@ -12,7 +12,7 @@ In addition to the standard library, `satcamsim` needs the following packages to
 
 - [pyproj](https://github.com/pyproj4/pyproj) version 3.3.1
 - [rasterio](https://rasterio.readthedocs.io/en/latest/index.html) version 1.2.10
-- [Shapely](https://rasterio.readthedocs.io/en/latest/index.html) version 1.8.2
+- [Shapely](https://shapely.readthedocs.io/en/1.8.2/manual.html) version 1.8.2
 
 Other versions may work but have not been tested. Standard library dependencies are:
 numpy,
