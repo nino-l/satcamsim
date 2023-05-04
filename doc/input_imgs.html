@@ -38,6 +38,7 @@ from shapely.ops import unary_union
 from os import listdir
 import pyproj
 import csv
+from glob import glob
 
 
 class Feature_finder:
@@ -207,7 +208,7 @@ class Feature_finder:
         return poly_Z
 
 
-class Raster_processor:
+class Comp_processor:
     &#34;&#34;&#34;Facilitate and simplify operations involving raster data used as comparison.&#34;&#34;&#34;
 
     def __init__(self):
@@ -216,7 +217,7 @@ class Raster_processor:
 
     def from_config(config, folder_out):
         &#34;&#34;&#34;
-        Initialize Raster_processor with config parameters.
+        Initialize Comp_processor with config parameters.
 
         Parameters
         ----------
@@ -227,17 +228,16 @@ class Raster_processor:
 
         Returns
         -------
-        processor : Raster_processor
+        processor : Comp_processor
             The initialized processor.
 
         &#34;&#34;&#34;
-        processor = Raster_processor()
-        processor.gsd_in = config[&#39;GSD_COMP&#39;]
+        processor = Comp_processor()
         processor.folder_in = config[&#39;COMPARE_FOLDER&#39;]
         processor.filenames = config[&#39;COMP_FILES&#39;]
 
         # create coordinate reference system
-        processor.crs_DOP = pyproj.CRS(&#34;epsg:25832&#34;)
+        processor.crs_obj = config[&#39;CRS_IN&#39;]
 
         processor.folder_out = folder_out
 
@@ -268,8 +268,8 @@ class Raster_processor:
 
         Returns
         -------
-        self : Raster_processor
-            The Raster_processor instance created for the context manager.
+        self : Comp_processor
+            The Comp_processor instance created for the context manager.
 
         &#34;&#34;&#34;
         if not self.filenames:
@@ -319,8 +319,8 @@ class Raster_processor:
         if filename not in self.open_files:
             try:
                 self.open_files[filename] = rasterio.open(self.folder_in + filename)
-            except rasterio.errors.RasterioIOError:     # raised if required file not available
-                print(&#34;\r&#34; + &#34;Warning: File &#34; + filename + &#34; not found!&#34;, end=&#34;&#34;)
+            except rasterio.errors.RasterioIOError:     # raised if required file not available or not a valid raster file
+                print(&#34;\r&#34; + &#34;Warning: File &#34; + self.folder_in + filename + &#34; not found or could not be opened by rasterio!&#34;, end=&#34;&#34;)
                 return False
         return True
 
@@ -347,17 +347,21 @@ class Raster_processor:
         poly_window = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file.transform)
         window_trans = windows.transform(poly_window, file.transform)
         data = file.read(window=poly_window)
+        
+        nodata = file.nodatavals[0]
+        if nodata is None:
+            nodata = 0
 
         # determine contained pixels
         contained = features.rasterize([(region_to_cut, 1)], out_shape=data.shape[1:], fill=0, transform=window_trans)
-        contained_data = np.where(contained, data, 0)
+        contained_data = np.where(contained, data, nodata)
         return contained_data, window_trans
 
     def cut_geom(self, geom):
         &#34;&#34;&#34;
         Cut and save region of passed-in geometry object from raster data.
         The specified geometry is cropped to the edges of the raster data, if necessary.
-        Output is saved to the Raster_processor&#39;s folder_out.
+        Output is saved to the Comp_processor&#39;s folder_out.
 
         Parameters
         ----------
@@ -377,10 +381,10 @@ class Raster_processor:
                 
                 # CRS transformation
                 crs_comp = pyproj.CRS.from_user_input(file.crs)
-                DOP2comp = pyproj.transformer.Transformer.from_crs(self.crs_DOP, crs_comp)
+                obj2comp = pyproj.transformer.Transformer.from_crs(self.crs_obj, crs_comp)
                 
                 # transform geom to comparison data CRS
-                vert_coords_transformed = list(DOP2comp.itransform(geom.exterior.coords))
+                vert_coords_transformed = list(obj2comp.itransform(geom.exterior.coords))
                 vertices_transformed = [Point(X, Y) for X, Y in vert_coords_transformed]
                 geom_transformed = Polygon(vertices_transformed)
                 
@@ -420,20 +424,22 @@ class Raster_processor:
             single Polygon, if glueing was successful.
 
         &#34;&#34;&#34;
+        if isinstance(geom, Polygon):
+            return geom
+        
         for _ in range(self.max_iter_glue):
-            if isinstance(geom, Polygon):
-                return geom
-
             geom = geom.buffer(self.glue_dist, resolution=4, cap_style=3, join_style=3)     # dilate by self.glue_dist
             geom = unary_union([geom])      # try unifiying all members
 
-        if not isinstance(geom, Polygon):
-            raise ValueError(&#34;Dilation limit reached, geometry could not be unified into a single Polygon&#34;)
+            if isinstance(geom, Polygon):
+                return geom
+
+        raise ValueError(&#34;Dilation limit reached, geometry could not be unified into a single Polygon&#34;)
 
 
-class DOP_processor:
+class Input_processor:
     &#34;&#34;&#34;
-    Facilitate and simplify operations involving the input DOPs.
+    Facilitate and simplify operations involving the input images.
 
     Parameters
     ----------
@@ -442,44 +448,37 @@ class DOP_processor:
 
     Returns
     -------
-    dop_processor : DOP_processor
-        a new DOP_processor instance.
+    Input_processor : Input_processor
+        a new Input_processor instance.
 
     &#34;&#34;&#34;
 
     def __init__(self):
         self.open_files = dict()
-        self.available_files = list()
+        self.available_files = np.array([], dtype=object)
+        self.bounds = np.empty((0, 4), dtype=float)
         return
 
     def from_config(config):
         &#34;&#34;&#34;
-        Initialize a new DOP_processor with the parameters specified in config.
+        Initialize a new Input_processor with the parameters specified in config.
 
         Parameters
         ----------
         config : Config
             Config containing all relevant parameters.
-        bands : tuple of int
-            The relevant band indices of the input data.
 
         Returns
         -------
-        processor : DOP_processor
-            The initialized DOP_processor instance.
+        processor : Input_processor
+            The initialized Input_processor instance.
 
         &#34;&#34;&#34;
-        processor = DOP_processor()
+        processor = Input_processor()
         processor.max_open_files = config[&#39;MAX_OPEN_FILES&#39;]
-        processor.folder_in = config[&#39;DOP_FOLDER&#39;]
-        processor.gsd_in = config[&#39;GSD_DOP&#39;]
-        processor.count_R = config[&#39;COUNT_R&#39;]
-        processor.count_C = config[&#39;COUNT_C&#39;]
-        processor.filename_format = config[&#39;FILENAME_FORMAT&#39;]
-
-        processor.DOP_width = processor.count_C * processor.gsd_in
-        processor.DOP_height = processor.count_R * processor.gsd_in
-
+        processor.folder_in = config[&#39;FOLDER_IN&#39;]
+        processor.file_extension = config[&#39;FILEEXTENSION_IN&#39;]
+        processor.nodata = config[&#39;NODATA_IN&#39;]
         return processor
 
     def __del__(self):
@@ -501,11 +500,17 @@ class DOP_processor:
 
         Returns
         -------
-        self : DOP_processor
-            The DOP_processor instance for the context manager.
+        self : Input_processor
+            The Input_processor instance for the context manager.
 
         &#34;&#34;&#34;
-        self.available_files = listdir(self.folder_in)
+        self.available_files = np.array(glob(self.folder_in + &#39;*&#39; + self.file_extension))
+        
+        self.bounds = np.full((len(self.available_files), 4), np.nan, dtype=float)
+        for idx, file in enumerate(self.available_files):
+            with rasterio.open(file) as f:
+                self.bounds[idx, :] = f.bounds
+                
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -544,7 +549,7 @@ class DOP_processor:
         Returns
         -------
         flag : bool
-            True if sampling was successful, False otherwise.
+            True if sampling was successful for all requested bands, False otherwise.
         sample : np.array or None
             array of shape (n_bands,) containing mean values for each band if sampling was successful, None otherwise.
         poly : shapely.geometry.Polygon
@@ -554,17 +559,24 @@ class DOP_processor:
         # create polygon of area of pixel projected onto terrain
         poly = Polygon(corners_obj)
 
-        is_success, data, data_trans = self.read_data(poly, corners_obj, bands)
+        is_success, data_list, trans_list = self.read_data(poly, corners_obj, bands)
 
         if not is_success:
             return False, None, poly
-
-        # determine contained input pixels in read-in data
-        contained = features.rasterize([(poly, 1)], out_shape=data.shape[1:], fill=0, transform=data_trans)
-
-        # R_contained, C_contained = np.nonzero(contained)
-        sum_samples = np.where(contained, data, 0).sum(axis=(1, 2))    # sum sampled pixel values
-        num_samples = np.sum(contained)                                # add no. of sampled pixels
+        
+        sum_samples = np.zeros((len(bands),), dtype=float)
+        num_samples = 0.
+        for data, data_trans in zip(data_list, trans_list):
+            # determine contained input pixels in read-in data
+            contained = features.rasterize([(poly, 1)], out_shape=data.shape[1:], fill=0, transform=data_trans)
+            
+            # check nodata
+            data = data[:, contained.astype(bool)]
+            if self.nodata in data:
+                return False, None, poly
+    
+            sum_samples += data.sum(axis=1)        # sum sampled pixel values per band
+            num_samples += contained.sum()         # no. of sampled pixels
 
         sample = sum_samples / num_samples        # compute mean sampled pixel values
 
@@ -582,40 +594,25 @@ class DOP_processor:
         Returns
         -------
         filenames : list[str]
-            contains names of the files, ordered by ascending X, if equal by ascending Y positions.
+            contains unique names of the files, ordered by ascending X, if equal by ascending Y positions.
 
         &#34;&#34;&#34;
         if not hasattr(objcoords[0], &#34;__len__&#34;):    # if a single point is specified instead of list of points
-            return self.get_filenames([objcoords]).pop()
+            return self.get_filenames([objcoords])
 
         filenames = list()
-
-        X, Y = zip(*objcoords)
-        X_min = min(X)
-        Y_min = min(Y)
-        X_max = max(X)
-        Y_max = max(Y)
-
-        # southwest corner coordinates coordinates of most southwest DOP tile
-        X_B0 = int(X_min / self.DOP_width) * self.DOP_width
-        Y_B0 = int(Y_min / self.DOP_width) * self.DOP_width
-
-        # base coordinates for all required DOP tiles
-        X_Bs = np.arange(X_B0, X_max, self.DOP_width, dtype=int)
-        Y_Bs = np.arange(Y_B0, Y_max, self.DOP_height, dtype=int)
-        if not X_Bs.size:
-            # if all X values are equal, np.arange will return np.array([])
-            X_Bs = [int(X_B0)]
-        if not Y_Bs.size:
-            # if all Y values are equal, np.arange will return np.array([])
-            Y_Bs = [int(Y_B0)]
-
-        base_coords = list(product(X_Bs, Y_Bs))
-
-        for X_B, Y_B in base_coords:
-            filename = self.filename_format(X_B, Y_B)
-            filenames.append(filename)
-        return filenames
+        
+        objcoords = sorted(objcoords)
+        for X, Y in objcoords:
+            fname = self.available_files[(self.bounds[:, 0] &lt;= X) &amp;  (self.bounds[:, 1] &lt;= Y) &amp; (X &lt;= self.bounds[:, 2]) &amp; (Y &lt;= self.bounds[:, 3])]
+            if len(fname) != 1:
+                # if file could not be uniquely identified
+                return False, None
+            
+            filenames.append(fname[0])
+            
+        filenames = list(dict.fromkeys(filenames))  # keep only unique filenames while preserving order
+        return True, filenames
 
     def _open_file(self, filename):
         &#34;&#34;&#34;
@@ -633,19 +630,16 @@ class DOP_processor:
 
         &#34;&#34;&#34;
         if filename not in self.open_files:
-            if filename not in self.available_files:
-                return False
-
             if len(self.open_files) &gt;= self.max_open_files:
                 self._close_files(len(self.open_files) - self.max_open_files)
 
-            self.open_files[filename] = rasterio.open(self.folder_in + filename)
-        return True
+            self.open_files[filename] = rasterio.open(filename)
+        return
 
     def read_data(self, poly, vertices, bands):
         &#34;&#34;&#34;
-        Read a rectangular bounding box containing the specified Polygon from DOP files.
-        Sections of 1, 2, or 4 files are compiled, if necessary.
+        Read a rectangular bounding box containing the specified Polygon from input files.
+        The current implementation may break if input files use a CRS/transform where not X==East==right, Y==North==up.
 
         Parameters
         ----------
@@ -663,89 +657,61 @@ class DOP_processor:
         data : np.ndarray or None
             raster data contained in the rectangular bounding box around poly, if successful. None otherwise.
         data_trans : rasterio.affine.Affine or None
-            Affine transform from raster data pixels to object coordinates, if successful. None otherwise..
+            Affine transform from raster data pixels to object coordinates, if successful. None otherwise.
 
         &#34;&#34;&#34;
-        # determine required input files and try to load them if necessary
-        filenames = self.get_filenames(vertices)
+        polybounds = poly.bounds
+        
+        # determine required input files from bounding box corners and try to load them if necessary
+        all_files_found, filenames = self.get_filenames([polybounds[0:2],       # SW corner    (yes
+                                                         polybounds[0::3],      # NW corner     this
+                                                         polybounds[2:0:-1],    # SE corner     is
+                                                         polybounds[2:]])       # NE corner     ugly)
+        
+        if not all_files_found:
+            # if coordinates could not be assigned to a unique input file
+            return False, None, None
+        
         for filename in filenames:
             if filename not in self.open_files:
-                is_success = self._open_file(filename)
+                self._open_file(filename)
+        
+        if len(filenames) == 1:
+            file = self.open_files[filenames[0]]
+            # windowed reading from input file
+            poly_window = windows.from_bounds(*polybounds, transform=file.transform)
+            data_trans = windows.transform(poly_window, file.transform)
+            data = file.read(bands, window=poly_window)
+            
+            if 0 in data.shape:
+                # can happen if only a very thin (&lt; 0.5 input pixels) part of the poly intersects with the input images
+                return False, None, None
+            return True, [data], [data_trans]
 
-                if not is_success:              # if file could not be loaded
-                    return False, None, None
+        data_list = []
+        trans_list = []
+        for filename in filenames:
+            file = self.open_files[filename]
+            
+            # trim bounding box to not extend beyond limits of the file
+            # (this will absolutely break if file uses a weird CRS/transform where not X==East==right, Y==North==up:
+            # rasterio orders file.bounds as &#39;left, bottom, right, top&#39;, which is not necessarily the same as &#39;X_min, Y_min, X_max, Y_max&#39;.
+            # thats&#39;s what geodesysts get for inventing stupid coordinate systems with insane axis ordering, and frankly I won&#39;t clean their mess for them)
+            windowbounds = [max(polymin, filemin) for polymin, filemin in zip(polybounds[:2], file.bounds[:2])] + [min(polymax, filemax) for polymax, filemax in zip(polybounds[2:], file.bounds[2:])]
 
-        X_min, Y_min, X_max, Y_max = poly.bounds
+            # windowed reading from input file
+            poly_window = windows.from_bounds(*windowbounds, transform=file.transform)
+            data_trans = windows.transform(poly_window, file.transform)
+            data = file.read(bands, window=poly_window)
 
-        try:
-            if len(filenames) == 1:
-                file = self.open_files[filenames[0]]
+            if 0 in data.shape:
+                # can happen if only a very thin (&lt; 0.5 input pixels) part of the poly intersects with the input images
+                continue
+            
+            data_list.append(data)
+            trans_list.append(data_trans)
 
-                # windowed reading from input file
-                poly_window = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file.transform)
-                data_trans = windows.transform(poly_window, file.transform)
-                data = file.read(bands, window=poly_window)
-
-            elif len(filenames) == 2:
-                file_SW = self.open_files[filenames[0]]     # southern or western file is first in list
-                window_SW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SW.transform)
-
-                # create empty output array from window size
-                data = np.full((len(bands), round(window_SW.height), round(window_SW.width)), np.NaN, np.uint8)
-                data_trans = windows.transform(window_SW, file_SW.transform)    # Affine transform for data array
-
-                data_SW = file_SW.read(bands, window=window_SW)        # read windowed data from file_SW
-                _, h_SW, w_SW = data_SW.shape
-                if h_SW and w_SW:
-                    data[:, -h_SW:, 0:w_SW] = data_SW           # fill in appropriate area of output array
-
-                file_NE = self.open_files[filenames[1]]     # northern or eastern file is next in list
-                window_NE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NE.transform)
-                data_NE = file_NE.read(bands, window=window_NE)        # read windowed data from file_NE
-                _, h_NE, w_NE = data_NE.shape
-                if h_NE and w_NE:
-                    data[:, 0:h_NE, -w_NE:] = data_NE       # fill in appropriate area of output array
-
-            elif len(filenames) == 4:
-                file_SW = self.open_files[filenames[0]]
-                window_SW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SW.transform)
-
-                data = np.full((len(bands), round(window_SW.height), round(window_SW.width)), np.NaN, np.uint8)
-                data_trans = windows.transform(window_SW, file_SW.transform)
-
-                data_SW = file_SW.read(bands, window=window_SW)
-                _, h_SW, w_SW = data_SW.shape
-                if h_SW and w_SW:
-                    data[:, -h_SW:, 0:w_SW] = data_SW
-
-                file_SE = self.open_files[filenames[2]]
-                window_SE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SE.transform)
-                data_SE = file_SE.read(bands, window=window_SE)
-                _, h_SE, w_SE = data_SE.shape
-                if h_SE and w_SE:
-                    data[:, -h_SE:, -w_SE:] = data_SE
-
-                file_NW = self.open_files[filenames[1]]
-                window_NW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NW.transform)
-                data_NW = file_NW.read(bands, window=window_NW)
-                _, h_NW, w_NW = data_NW.shape
-                if h_NW and w_NW:
-                    data[:, 0:h_NW, 0:w_NW] = data_NW
-
-                file_NE = self.open_files[filenames[3]]
-                window_NE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NE.transform)
-                data_NE = file_NE.read(bands, window=window_NE)
-                _, h_NE, w_NE = data_NE.shape
-                if h_NE and w_NE:
-                    data[:, 0:h_NE, -w_NE:] = data_NE
-
-            else:
-                raise ValueError(&#34;poly must be covered by one single, two neighboring, or 2x2 neighboring files&#34;)
-
-            return True, data, data_trans
-
-        except KeyError:
-            return False, None, None
+        return True, data_list, trans_list
 
     def _close_files(self, n_files=-1):
         &#34;&#34;&#34;
@@ -781,73 +747,53 @@ class DOP_processor:
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="satcamsim.input_imgs.DOP_processor"><code class="flex name class">
-<span>class <span class="ident">DOP_processor</span></span>
+<dt id="satcamsim.input_imgs.Comp_processor"><code class="flex name class">
+<span>class <span class="ident">Comp_processor</span></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Facilitate and simplify operations involving the input DOPs.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>bands</code></strong> :&ensp;<code>tuple</code> of <code>int</code></dt>
-<dd>the band indices to be read from the input data.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>dop_processor</code></strong> :&ensp;<code><a title="satcamsim.input_imgs.DOP_processor" href="#satcamsim.input_imgs.DOP_processor">DOP_processor</a></code></dt>
-<dd>a new DOP_processor instance.</dd>
-</dl></div>
+<div class="desc"><p>Facilitate and simplify operations involving raster data used as comparison.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class DOP_processor:
-    &#34;&#34;&#34;
-    Facilitate and simplify operations involving the input DOPs.
-
-    Parameters
-    ----------
-    bands : tuple of int
-        the band indices to be read from the input data.
-
-    Returns
-    -------
-    dop_processor : DOP_processor
-        a new DOP_processor instance.
-
-    &#34;&#34;&#34;
+<pre><code class="python">class Comp_processor:
+    &#34;&#34;&#34;Facilitate and simplify operations involving raster data used as comparison.&#34;&#34;&#34;
 
     def __init__(self):
         self.open_files = dict()
-        self.available_files = list()
         return
 
-    def from_config(config):
+    def from_config(config, folder_out):
         &#34;&#34;&#34;
-        Initialize a new DOP_processor with the parameters specified in config.
+        Initialize Comp_processor with config parameters.
 
         Parameters
         ----------
         config : Config
-            Config containing all relevant parameters.
-        bands : tuple of int
-            The relevant band indices of the input data.
+            Config specifying the processor parameters.
+        folder_out : str
+            Path to output folder for the processor.
 
         Returns
         -------
-        processor : DOP_processor
-            The initialized DOP_processor instance.
+        processor : Comp_processor
+            The initialized processor.
 
         &#34;&#34;&#34;
-        processor = DOP_processor()
-        processor.max_open_files = config[&#39;MAX_OPEN_FILES&#39;]
-        processor.folder_in = config[&#39;DOP_FOLDER&#39;]
-        processor.gsd_in = config[&#39;GSD_DOP&#39;]
-        processor.count_R = config[&#39;COUNT_R&#39;]
-        processor.count_C = config[&#39;COUNT_C&#39;]
-        processor.filename_format = config[&#39;FILENAME_FORMAT&#39;]
+        processor = Comp_processor()
+        processor.folder_in = config[&#39;COMPARE_FOLDER&#39;]
+        processor.filenames = config[&#39;COMP_FILES&#39;]
 
-        processor.DOP_width = processor.count_C * processor.gsd_in
-        processor.DOP_height = processor.count_R * processor.gsd_in
+        # create coordinate reference system
+        processor.crs_obj = config[&#39;CRS_IN&#39;]
+
+        processor.folder_out = folder_out
+
+        processor.glue_multipolys = config[&#39;GLUE_MULTIPOLYS&#39;]
+        if processor.glue_multipolys:
+            processor.max_dist_glue = config[&#39;MAX_DIST_GLUE&#39;]
+            processor.max_iter_glue = config[&#39;MAX_ITER_GLUE&#39;]
+            processor.glue_dist = processor.max_dist_glue / processor.max_iter_glue
 
         return processor
 
@@ -866,15 +812,19 @@ class DOP_processor:
 
     def __enter__(self):
         &#34;&#34;&#34;
-        Return self for use in context manager.
+        Open comparison files for use in context manager.
 
         Returns
         -------
-        self : DOP_processor
-            The DOP_processor instance for the context manager.
+        self : Comp_processor
+            The Comp_processor instance created for the context manager.
 
         &#34;&#34;&#34;
-        self.available_files = listdir(self.folder_in)
+        if not self.filenames:
+            self.filenames = listdir(self.folder_in)
+        for filename in self.filenames:
+            self._open_file(filename)
+
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -899,93 +849,6 @@ class DOP_processor:
             file.close()
         return
 
-    def sample_area(self, corners_obj, bands):
-        &#34;&#34;&#34;
-        Compute mean of raster data within the polygonal area specified by its corners in object coordinates.
-
-        Parameters
-        ----------
-        corners_obj: list of tuple
-            list of (X, Y) coordinate tuples representing polygon corners.
-        bands : tuple of int
-            tuple of the band indices to be read.
-
-        Returns
-        -------
-        flag : bool
-            True if sampling was successful, False otherwise.
-        sample : np.array or None
-            array of shape (n_bands,) containing mean values for each band if sampling was successful, None otherwise.
-        poly : shapely.geometry.Polygon
-            the polygon area that was sampled (=ground track coverage). Returned even if sampling was unsuccessful.
-
-        &#34;&#34;&#34;
-        # create polygon of area of pixel projected onto terrain
-        poly = Polygon(corners_obj)
-
-        is_success, data, data_trans = self.read_data(poly, corners_obj, bands)
-
-        if not is_success:
-            return False, None, poly
-
-        # determine contained input pixels in read-in data
-        contained = features.rasterize([(poly, 1)], out_shape=data.shape[1:], fill=0, transform=data_trans)
-
-        # R_contained, C_contained = np.nonzero(contained)
-        sum_samples = np.where(contained, data, 0).sum(axis=(1, 2))    # sum sampled pixel values
-        num_samples = np.sum(contained)                                # add no. of sampled pixels
-
-        sample = sum_samples / num_samples        # compute mean sampled pixel values
-
-        return True, sample, poly
-
-    def get_filenames(self, objcoords):
-        &#34;&#34;&#34;
-        Construct all file names containing specified points.
-
-        Parameters
-        ----------
-        objcoords : list[tuple]
-            list of point coordinate tuples in (X, Y) format.
-
-        Returns
-        -------
-        filenames : list[str]
-            contains names of the files, ordered by ascending X, if equal by ascending Y positions.
-
-        &#34;&#34;&#34;
-        if not hasattr(objcoords[0], &#34;__len__&#34;):    # if a single point is specified instead of list of points
-            return self.get_filenames([objcoords]).pop()
-
-        filenames = list()
-
-        X, Y = zip(*objcoords)
-        X_min = min(X)
-        Y_min = min(Y)
-        X_max = max(X)
-        Y_max = max(Y)
-
-        # southwest corner coordinates coordinates of most southwest DOP tile
-        X_B0 = int(X_min / self.DOP_width) * self.DOP_width
-        Y_B0 = int(Y_min / self.DOP_width) * self.DOP_width
-
-        # base coordinates for all required DOP tiles
-        X_Bs = np.arange(X_B0, X_max, self.DOP_width, dtype=int)
-        Y_Bs = np.arange(Y_B0, Y_max, self.DOP_height, dtype=int)
-        if not X_Bs.size:
-            # if all X values are equal, np.arange will return np.array([])
-            X_Bs = [int(X_B0)]
-        if not Y_Bs.size:
-            # if all Y values are equal, np.arange will return np.array([])
-            Y_Bs = [int(Y_B0)]
-
-        base_coords = list(product(X_Bs, Y_Bs))
-
-        for X_B, Y_B in base_coords:
-            filename = self.filename_format(X_B, Y_B)
-            filenames.append(filename)
-        return filenames
-
     def _open_file(self, filename):
         &#34;&#34;&#34;
         Open specified files from disk.
@@ -1002,463 +865,358 @@ class DOP_processor:
 
         &#34;&#34;&#34;
         if filename not in self.open_files:
-            if filename not in self.available_files:
+            try:
+                self.open_files[filename] = rasterio.open(self.folder_in + filename)
+            except rasterio.errors.RasterioIOError:     # raised if required file not available or not a valid raster file
+                print(&#34;\r&#34; + &#34;Warning: File &#34; + self.folder_in + filename + &#34; not found or could not be opened by rasterio!&#34;, end=&#34;&#34;)
                 return False
-
-            if len(self.open_files) &gt;= self.max_open_files:
-                self._close_files(len(self.open_files) - self.max_open_files)
-
-            self.open_files[filename] = rasterio.open(self.folder_in + filename)
         return True
 
-    def read_data(self, poly, vertices, bands):
+    def read_from_file(self, region_to_cut, file):
         &#34;&#34;&#34;
-        Read a rectangular bounding box containing the specified Polygon from DOP files.
-        Sections of 1, 2, or 4 files are compiled, if necessary.
+        Reads data contained in the specified region from file.
 
         Parameters
         ----------
-        poly : shapely.geometry.Polygon
-            Polygonal ROI which will be fully covered by the read-in data.
-        vertices : np.ndarray
-            coordinates of ROI vertices.
-        bands : tuple of int
-             tuple of the band indices to be read.
+        region_to_cut : Polygon
+            Region of interest, in XY object coordinates.
+        file : rasterio.DatasetReader
+            file from which data is to be read.
 
         Returns
         -------
-        flag : bool
-            True if data was read in successfully, False otherwise.
-        data : np.ndarray or None
-            raster data contained in the rectangular bounding box around poly, if successful. None otherwise.
-        data_trans : rasterio.affine.Affine or None
-            Affine transform from raster data pixels to object coordinates, if successful. None otherwise..
+        contained_data : np.ndarray
+            extracted raster data.
+        window_trans : rasterio.affine.Affine
+            transform of the extracted raster data section.
 
         &#34;&#34;&#34;
-        # determine required input files and try to load them if necessary
-        filenames = self.get_filenames(vertices)
-        for filename in filenames:
-            if filename not in self.open_files:
-                is_success = self._open_file(filename)
+        X_min, Y_min, X_max, Y_max = region_to_cut.bounds
+        poly_window = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file.transform)
+        window_trans = windows.transform(poly_window, file.transform)
+        data = file.read(window=poly_window)
+        
+        nodata = file.nodatavals[0]
+        if nodata is None:
+            nodata = 0
 
-                if not is_success:              # if file could not be loaded
-                    return False, None, None
+        # determine contained pixels
+        contained = features.rasterize([(region_to_cut, 1)], out_shape=data.shape[1:], fill=0, transform=window_trans)
+        contained_data = np.where(contained, data, nodata)
+        return contained_data, window_trans
 
-        X_min, Y_min, X_max, Y_max = poly.bounds
-
-        try:
-            if len(filenames) == 1:
-                file = self.open_files[filenames[0]]
-
-                # windowed reading from input file
-                poly_window = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file.transform)
-                data_trans = windows.transform(poly_window, file.transform)
-                data = file.read(bands, window=poly_window)
-
-            elif len(filenames) == 2:
-                file_SW = self.open_files[filenames[0]]     # southern or western file is first in list
-                window_SW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SW.transform)
-
-                # create empty output array from window size
-                data = np.full((len(bands), round(window_SW.height), round(window_SW.width)), np.NaN, np.uint8)
-                data_trans = windows.transform(window_SW, file_SW.transform)    # Affine transform for data array
-
-                data_SW = file_SW.read(bands, window=window_SW)        # read windowed data from file_SW
-                _, h_SW, w_SW = data_SW.shape
-                if h_SW and w_SW:
-                    data[:, -h_SW:, 0:w_SW] = data_SW           # fill in appropriate area of output array
-
-                file_NE = self.open_files[filenames[1]]     # northern or eastern file is next in list
-                window_NE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NE.transform)
-                data_NE = file_NE.read(bands, window=window_NE)        # read windowed data from file_NE
-                _, h_NE, w_NE = data_NE.shape
-                if h_NE and w_NE:
-                    data[:, 0:h_NE, -w_NE:] = data_NE       # fill in appropriate area of output array
-
-            elif len(filenames) == 4:
-                file_SW = self.open_files[filenames[0]]
-                window_SW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SW.transform)
-
-                data = np.full((len(bands), round(window_SW.height), round(window_SW.width)), np.NaN, np.uint8)
-                data_trans = windows.transform(window_SW, file_SW.transform)
-
-                data_SW = file_SW.read(bands, window=window_SW)
-                _, h_SW, w_SW = data_SW.shape
-                if h_SW and w_SW:
-                    data[:, -h_SW:, 0:w_SW] = data_SW
-
-                file_SE = self.open_files[filenames[2]]
-                window_SE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SE.transform)
-                data_SE = file_SE.read(bands, window=window_SE)
-                _, h_SE, w_SE = data_SE.shape
-                if h_SE and w_SE:
-                    data[:, -h_SE:, -w_SE:] = data_SE
-
-                file_NW = self.open_files[filenames[1]]
-                window_NW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NW.transform)
-                data_NW = file_NW.read(bands, window=window_NW)
-                _, h_NW, w_NW = data_NW.shape
-                if h_NW and w_NW:
-                    data[:, 0:h_NW, 0:w_NW] = data_NW
-
-                file_NE = self.open_files[filenames[3]]
-                window_NE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NE.transform)
-                data_NE = file_NE.read(bands, window=window_NE)
-                _, h_NE, w_NE = data_NE.shape
-                if h_NE and w_NE:
-                    data[:, 0:h_NE, -w_NE:] = data_NE
-
-            else:
-                raise ValueError(&#34;poly must be covered by one single, two neighboring, or 2x2 neighboring files&#34;)
-
-            return True, data, data_trans
-
-        except KeyError:
-            return False, None, None
-
-    def _close_files(self, n_files=-1):
+    def cut_geom(self, geom):
         &#34;&#34;&#34;
-        Close files that have been open the longest (oldest file in dict).
+        Cut and save region of passed-in geometry object from raster data.
+        The specified geometry is cropped to the edges of the raster data, if necessary.
+        Output is saved to the Comp_processor&#39;s folder_out.
 
         Parameters
         ----------
-        n_files : int, optional
-            Number of files to close, or -1 to close all files. The default is -1.
-            Note: if n_files &gt;= len(self.open_files), all files will be closed.
+        geom : shapely.geometry object
+            geometry object describing the region to be extracted, in EPSG:25832 coordinates.
 
         Returns
         -------
         None.
 
         &#34;&#34;&#34;
-        if n_files == -1 or n_files &gt; len(self.open_files):
-            n_files = len(self.open_files)
+        with rasterio.Env() as rio_env:
+            if self.glue_multipolys:
+                geom = self.glue_geoms(geom)    # close small gaps in the coverage
 
-        for _ in range(n_files):
-            filename, file = next(iter(self.open_files.items()))
-            file.close()
-            del self.open_files[filename]
-        return</code></pre>
+            for filename, file in self.open_files.items():
+                
+                # CRS transformation
+                crs_comp = pyproj.CRS.from_user_input(file.crs)
+                obj2comp = pyproj.transformer.Transformer.from_crs(self.crs_obj, crs_comp)
+                
+                # transform geom to comparison data CRS
+                vert_coords_transformed = list(obj2comp.itransform(geom.exterior.coords))
+                vertices_transformed = [Point(X, Y) for X, Y in vert_coords_transformed]
+                geom_transformed = Polygon(vertices_transformed)
+                
+                # crop region to edges of comparison data
+                X_lo, Y_lo, X_hi, Y_hi = file.bounds
+                region_to_cut = geom_transformed.intersection(Polygon([(X_lo, Y_lo), (X_hi, Y_lo), (X_hi, Y_hi), (X_lo, Y_hi)]))
+
+                # if no overlap exists
+                if not region_to_cut:
+                    continue
+
+                contained_data, window_trans = self.read_from_file(region_to_cut, file)
+                # write to new raster file
+                profile = file.profile
+                profile.update(height=contained_data.shape[1],
+                               width=contained_data.shape[2],
+                               transform=window_trans)
+                with rasterio.open(self.folder_out + &#39;cutout_&#39; + filename, &#39;w&#39;, **profile) as dest:
+                    for idx, band_data in enumerate(contained_data, start=1):
+                        dest.write(band_data, idx)
+        return
+
+    def glue_geoms(self, geom):
+        &#34;&#34;&#34;
+        Dilate a collection of geometries iteratively until its members can be merged into a single Polygon.
+        If a single, non-Polygon geometry object is passed, it is dilated and therefore converted to a Polygon.
+        If not all members can be unified into a single Polygon within the dilation limits, an exception is raised.
+
+        Parameters
+        ----------
+        geom : shapely.geometry object
+            geometry collection or single geometry object.
+
+        Returns
+        -------
+        geom : shapely.geometry object
+            single Polygon, if glueing was successful.
+
+        &#34;&#34;&#34;
+        if isinstance(geom, Polygon):
+            return geom
+        
+        for _ in range(self.max_iter_glue):
+            geom = geom.buffer(self.glue_dist, resolution=4, cap_style=3, join_style=3)     # dilate by self.glue_dist
+            geom = unary_union([geom])      # try unifiying all members
+
+            if isinstance(geom, Polygon):
+                return geom
+
+        raise ValueError(&#34;Dilation limit reached, geometry could not be unified into a single Polygon&#34;)</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
-<dt id="satcamsim.input_imgs.DOP_processor.from_config"><code class="name flex">
-<span>def <span class="ident">from_config</span></span>(<span>config)</span>
+<dt id="satcamsim.input_imgs.Comp_processor.cut_geom"><code class="name flex">
+<span>def <span class="ident">cut_geom</span></span>(<span>self, geom)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Initialize a new DOP_processor with the parameters specified in config.</p>
+<div class="desc"><p>Cut and save region of passed-in geometry object from raster data.
+The specified geometry is cropped to the edges of the raster data, if necessary.
+Output is saved to the Comp_processor's folder_out.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>geom</code></strong> :&ensp;<code>shapely.geometry object</code></dt>
+<dd>geometry object describing the region to be extracted, in EPSG:25832 coordinates.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>None.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cut_geom(self, geom):
+    &#34;&#34;&#34;
+    Cut and save region of passed-in geometry object from raster data.
+    The specified geometry is cropped to the edges of the raster data, if necessary.
+    Output is saved to the Comp_processor&#39;s folder_out.
+
+    Parameters
+    ----------
+    geom : shapely.geometry object
+        geometry object describing the region to be extracted, in EPSG:25832 coordinates.
+
+    Returns
+    -------
+    None.
+
+    &#34;&#34;&#34;
+    with rasterio.Env() as rio_env:
+        if self.glue_multipolys:
+            geom = self.glue_geoms(geom)    # close small gaps in the coverage
+
+        for filename, file in self.open_files.items():
+            
+            # CRS transformation
+            crs_comp = pyproj.CRS.from_user_input(file.crs)
+            obj2comp = pyproj.transformer.Transformer.from_crs(self.crs_obj, crs_comp)
+            
+            # transform geom to comparison data CRS
+            vert_coords_transformed = list(obj2comp.itransform(geom.exterior.coords))
+            vertices_transformed = [Point(X, Y) for X, Y in vert_coords_transformed]
+            geom_transformed = Polygon(vertices_transformed)
+            
+            # crop region to edges of comparison data
+            X_lo, Y_lo, X_hi, Y_hi = file.bounds
+            region_to_cut = geom_transformed.intersection(Polygon([(X_lo, Y_lo), (X_hi, Y_lo), (X_hi, Y_hi), (X_lo, Y_hi)]))
+
+            # if no overlap exists
+            if not region_to_cut:
+                continue
+
+            contained_data, window_trans = self.read_from_file(region_to_cut, file)
+            # write to new raster file
+            profile = file.profile
+            profile.update(height=contained_data.shape[1],
+                           width=contained_data.shape[2],
+                           transform=window_trans)
+            with rasterio.open(self.folder_out + &#39;cutout_&#39; + filename, &#39;w&#39;, **profile) as dest:
+                for idx, band_data in enumerate(contained_data, start=1):
+                    dest.write(band_data, idx)
+    return</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.input_imgs.Comp_processor.from_config"><code class="name flex">
+<span>def <span class="ident">from_config</span></span>(<span>config, folder_out)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Initialize Comp_processor with config parameters.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>config</code></strong> :&ensp;<code>Config</code></dt>
-<dd>Config containing all relevant parameters.</dd>
-<dt><strong><code>bands</code></strong> :&ensp;<code>tuple</code> of <code>int</code></dt>
-<dd>The relevant band indices of the input data.</dd>
+<dd>Config specifying the processor parameters.</dd>
+<dt><strong><code>folder_out</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to output folder for the processor.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><code>processor</code></strong> :&ensp;<code><a title="satcamsim.input_imgs.DOP_processor" href="#satcamsim.input_imgs.DOP_processor">DOP_processor</a></code></dt>
-<dd>The initialized DOP_processor instance.</dd>
+<dt><strong><code>processor</code></strong> :&ensp;<code><a title="satcamsim.input_imgs.Comp_processor" href="#satcamsim.input_imgs.Comp_processor">Comp_processor</a></code></dt>
+<dd>The initialized processor.</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def from_config(config):
+<pre><code class="python">def from_config(config, folder_out):
     &#34;&#34;&#34;
-    Initialize a new DOP_processor with the parameters specified in config.
+    Initialize Comp_processor with config parameters.
 
     Parameters
     ----------
     config : Config
-        Config containing all relevant parameters.
-    bands : tuple of int
-        The relevant band indices of the input data.
+        Config specifying the processor parameters.
+    folder_out : str
+        Path to output folder for the processor.
 
     Returns
     -------
-    processor : DOP_processor
-        The initialized DOP_processor instance.
+    processor : Comp_processor
+        The initialized processor.
 
     &#34;&#34;&#34;
-    processor = DOP_processor()
-    processor.max_open_files = config[&#39;MAX_OPEN_FILES&#39;]
-    processor.folder_in = config[&#39;DOP_FOLDER&#39;]
-    processor.gsd_in = config[&#39;GSD_DOP&#39;]
-    processor.count_R = config[&#39;COUNT_R&#39;]
-    processor.count_C = config[&#39;COUNT_C&#39;]
-    processor.filename_format = config[&#39;FILENAME_FORMAT&#39;]
+    processor = Comp_processor()
+    processor.folder_in = config[&#39;COMPARE_FOLDER&#39;]
+    processor.filenames = config[&#39;COMP_FILES&#39;]
 
-    processor.DOP_width = processor.count_C * processor.gsd_in
-    processor.DOP_height = processor.count_R * processor.gsd_in
+    # create coordinate reference system
+    processor.crs_obj = config[&#39;CRS_IN&#39;]
+
+    processor.folder_out = folder_out
+
+    processor.glue_multipolys = config[&#39;GLUE_MULTIPOLYS&#39;]
+    if processor.glue_multipolys:
+        processor.max_dist_glue = config[&#39;MAX_DIST_GLUE&#39;]
+        processor.max_iter_glue = config[&#39;MAX_ITER_GLUE&#39;]
+        processor.glue_dist = processor.max_dist_glue / processor.max_iter_glue
 
     return processor</code></pre>
 </details>
 </dd>
-<dt id="satcamsim.input_imgs.DOP_processor.get_filenames"><code class="name flex">
-<span>def <span class="ident">get_filenames</span></span>(<span>self, objcoords)</span>
+<dt id="satcamsim.input_imgs.Comp_processor.glue_geoms"><code class="name flex">
+<span>def <span class="ident">glue_geoms</span></span>(<span>self, geom)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Construct all file names containing specified points.</p>
+<div class="desc"><p>Dilate a collection of geometries iteratively until its members can be merged into a single Polygon.
+If a single, non-Polygon geometry object is passed, it is dilated and therefore converted to a Polygon.
+If not all members can be unified into a single Polygon within the dilation limits, an exception is raised.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>objcoords</code></strong> :&ensp;<code>list[tuple]</code></dt>
-<dd>list of point coordinate tuples in (X, Y) format.</dd>
+<dt><strong><code>geom</code></strong> :&ensp;<code>shapely.geometry object</code></dt>
+<dd>geometry collection or single geometry object.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><code>filenames</code></strong> :&ensp;<code>list[str]</code></dt>
-<dd>contains names of the files, ordered by ascending X, if equal by ascending Y positions.</dd>
+<dt><strong><code>geom</code></strong> :&ensp;<code>shapely.geometry object</code></dt>
+<dd>single Polygon, if glueing was successful.</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_filenames(self, objcoords):
+<pre><code class="python">def glue_geoms(self, geom):
     &#34;&#34;&#34;
-    Construct all file names containing specified points.
+    Dilate a collection of geometries iteratively until its members can be merged into a single Polygon.
+    If a single, non-Polygon geometry object is passed, it is dilated and therefore converted to a Polygon.
+    If not all members can be unified into a single Polygon within the dilation limits, an exception is raised.
 
     Parameters
     ----------
-    objcoords : list[tuple]
-        list of point coordinate tuples in (X, Y) format.
+    geom : shapely.geometry object
+        geometry collection or single geometry object.
 
     Returns
     -------
-    filenames : list[str]
-        contains names of the files, ordered by ascending X, if equal by ascending Y positions.
+    geom : shapely.geometry object
+        single Polygon, if glueing was successful.
 
     &#34;&#34;&#34;
-    if not hasattr(objcoords[0], &#34;__len__&#34;):    # if a single point is specified instead of list of points
-        return self.get_filenames([objcoords]).pop()
+    if isinstance(geom, Polygon):
+        return geom
+    
+    for _ in range(self.max_iter_glue):
+        geom = geom.buffer(self.glue_dist, resolution=4, cap_style=3, join_style=3)     # dilate by self.glue_dist
+        geom = unary_union([geom])      # try unifiying all members
 
-    filenames = list()
+        if isinstance(geom, Polygon):
+            return geom
 
-    X, Y = zip(*objcoords)
-    X_min = min(X)
-    Y_min = min(Y)
-    X_max = max(X)
-    Y_max = max(Y)
-
-    # southwest corner coordinates coordinates of most southwest DOP tile
-    X_B0 = int(X_min / self.DOP_width) * self.DOP_width
-    Y_B0 = int(Y_min / self.DOP_width) * self.DOP_width
-
-    # base coordinates for all required DOP tiles
-    X_Bs = np.arange(X_B0, X_max, self.DOP_width, dtype=int)
-    Y_Bs = np.arange(Y_B0, Y_max, self.DOP_height, dtype=int)
-    if not X_Bs.size:
-        # if all X values are equal, np.arange will return np.array([])
-        X_Bs = [int(X_B0)]
-    if not Y_Bs.size:
-        # if all Y values are equal, np.arange will return np.array([])
-        Y_Bs = [int(Y_B0)]
-
-    base_coords = list(product(X_Bs, Y_Bs))
-
-    for X_B, Y_B in base_coords:
-        filename = self.filename_format(X_B, Y_B)
-        filenames.append(filename)
-    return filenames</code></pre>
+    raise ValueError(&#34;Dilation limit reached, geometry could not be unified into a single Polygon&#34;)</code></pre>
 </details>
 </dd>
-<dt id="satcamsim.input_imgs.DOP_processor.read_data"><code class="name flex">
-<span>def <span class="ident">read_data</span></span>(<span>self, poly, vertices, bands)</span>
+<dt id="satcamsim.input_imgs.Comp_processor.read_from_file"><code class="name flex">
+<span>def <span class="ident">read_from_file</span></span>(<span>self, region_to_cut, file)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Read a rectangular bounding box containing the specified Polygon from DOP files.
-Sections of 1, 2, or 4 files are compiled, if necessary.</p>
+<div class="desc"><p>Reads data contained in the specified region from file.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>poly</code></strong> :&ensp;<code>shapely.geometry.Polygon</code></dt>
-<dd>Polygonal ROI which will be fully covered by the read-in data.</dd>
-<dt><strong><code>vertices</code></strong> :&ensp;<code>np.ndarray</code></dt>
-<dd>coordinates of ROI vertices.</dd>
-<dt><strong><code>bands</code></strong> :&ensp;<code>tuple</code> of <code>int</code></dt>
-<dd>tuple of the band indices to be read.</dd>
+<dt><strong><code>region_to_cut</code></strong> :&ensp;<code>Polygon</code></dt>
+<dd>Region of interest, in XY object coordinates.</dd>
+<dt><strong><code>file</code></strong> :&ensp;<code>rasterio.DatasetReader</code></dt>
+<dd>file from which data is to be read.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><code>flag</code></strong> :&ensp;<code>bool</code></dt>
-<dd>True if data was read in successfully, False otherwise.</dd>
-<dt><strong><code>data</code></strong> :&ensp;<code>np.ndarray</code> or <code>None</code></dt>
-<dd>raster data contained in the rectangular bounding box around poly, if successful. None otherwise.</dd>
-<dt><strong><code>data_trans</code></strong> :&ensp;<code>rasterio.affine.Affine</code> or <code>None</code></dt>
-<dd>Affine transform from raster data pixels to object coordinates, if successful. None otherwise..</dd>
+<dt><strong><code>contained_data</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>extracted raster data.</dd>
+<dt><strong><code>window_trans</code></strong> :&ensp;<code>rasterio.affine.Affine</code></dt>
+<dd>transform of the extracted raster data section.</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def read_data(self, poly, vertices, bands):
+<pre><code class="python">def read_from_file(self, region_to_cut, file):
     &#34;&#34;&#34;
-    Read a rectangular bounding box containing the specified Polygon from DOP files.
-    Sections of 1, 2, or 4 files are compiled, if necessary.
+    Reads data contained in the specified region from file.
 
     Parameters
     ----------
-    poly : shapely.geometry.Polygon
-        Polygonal ROI which will be fully covered by the read-in data.
-    vertices : np.ndarray
-        coordinates of ROI vertices.
-    bands : tuple of int
-         tuple of the band indices to be read.
+    region_to_cut : Polygon
+        Region of interest, in XY object coordinates.
+    file : rasterio.DatasetReader
+        file from which data is to be read.
 
     Returns
     -------
-    flag : bool
-        True if data was read in successfully, False otherwise.
-    data : np.ndarray or None
-        raster data contained in the rectangular bounding box around poly, if successful. None otherwise.
-    data_trans : rasterio.affine.Affine or None
-        Affine transform from raster data pixels to object coordinates, if successful. None otherwise..
+    contained_data : np.ndarray
+        extracted raster data.
+    window_trans : rasterio.affine.Affine
+        transform of the extracted raster data section.
 
     &#34;&#34;&#34;
-    # determine required input files and try to load them if necessary
-    filenames = self.get_filenames(vertices)
-    for filename in filenames:
-        if filename not in self.open_files:
-            is_success = self._open_file(filename)
+    X_min, Y_min, X_max, Y_max = region_to_cut.bounds
+    poly_window = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file.transform)
+    window_trans = windows.transform(poly_window, file.transform)
+    data = file.read(window=poly_window)
+    
+    nodata = file.nodatavals[0]
+    if nodata is None:
+        nodata = 0
 
-            if not is_success:              # if file could not be loaded
-                return False, None, None
-
-    X_min, Y_min, X_max, Y_max = poly.bounds
-
-    try:
-        if len(filenames) == 1:
-            file = self.open_files[filenames[0]]
-
-            # windowed reading from input file
-            poly_window = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file.transform)
-            data_trans = windows.transform(poly_window, file.transform)
-            data = file.read(bands, window=poly_window)
-
-        elif len(filenames) == 2:
-            file_SW = self.open_files[filenames[0]]     # southern or western file is first in list
-            window_SW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SW.transform)
-
-            # create empty output array from window size
-            data = np.full((len(bands), round(window_SW.height), round(window_SW.width)), np.NaN, np.uint8)
-            data_trans = windows.transform(window_SW, file_SW.transform)    # Affine transform for data array
-
-            data_SW = file_SW.read(bands, window=window_SW)        # read windowed data from file_SW
-            _, h_SW, w_SW = data_SW.shape
-            if h_SW and w_SW:
-                data[:, -h_SW:, 0:w_SW] = data_SW           # fill in appropriate area of output array
-
-            file_NE = self.open_files[filenames[1]]     # northern or eastern file is next in list
-            window_NE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NE.transform)
-            data_NE = file_NE.read(bands, window=window_NE)        # read windowed data from file_NE
-            _, h_NE, w_NE = data_NE.shape
-            if h_NE and w_NE:
-                data[:, 0:h_NE, -w_NE:] = data_NE       # fill in appropriate area of output array
-
-        elif len(filenames) == 4:
-            file_SW = self.open_files[filenames[0]]
-            window_SW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SW.transform)
-
-            data = np.full((len(bands), round(window_SW.height), round(window_SW.width)), np.NaN, np.uint8)
-            data_trans = windows.transform(window_SW, file_SW.transform)
-
-            data_SW = file_SW.read(bands, window=window_SW)
-            _, h_SW, w_SW = data_SW.shape
-            if h_SW and w_SW:
-                data[:, -h_SW:, 0:w_SW] = data_SW
-
-            file_SE = self.open_files[filenames[2]]
-            window_SE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_SE.transform)
-            data_SE = file_SE.read(bands, window=window_SE)
-            _, h_SE, w_SE = data_SE.shape
-            if h_SE and w_SE:
-                data[:, -h_SE:, -w_SE:] = data_SE
-
-            file_NW = self.open_files[filenames[1]]
-            window_NW = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NW.transform)
-            data_NW = file_NW.read(bands, window=window_NW)
-            _, h_NW, w_NW = data_NW.shape
-            if h_NW and w_NW:
-                data[:, 0:h_NW, 0:w_NW] = data_NW
-
-            file_NE = self.open_files[filenames[3]]
-            window_NE = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file_NE.transform)
-            data_NE = file_NE.read(bands, window=window_NE)
-            _, h_NE, w_NE = data_NE.shape
-            if h_NE and w_NE:
-                data[:, 0:h_NE, -w_NE:] = data_NE
-
-        else:
-            raise ValueError(&#34;poly must be covered by one single, two neighboring, or 2x2 neighboring files&#34;)
-
-        return True, data, data_trans
-
-    except KeyError:
-        return False, None, None</code></pre>
-</details>
-</dd>
-<dt id="satcamsim.input_imgs.DOP_processor.sample_area"><code class="name flex">
-<span>def <span class="ident">sample_area</span></span>(<span>self, corners_obj, bands)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Compute mean of raster data within the polygonal area specified by its corners in object coordinates.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>corners_obj</code></strong> :&ensp;<code>list</code> of <code>tuple</code></dt>
-<dd>list of (X, Y) coordinate tuples representing polygon corners.</dd>
-<dt><strong><code>bands</code></strong> :&ensp;<code>tuple</code> of <code>int</code></dt>
-<dd>tuple of the band indices to be read.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>flag</code></strong> :&ensp;<code>bool</code></dt>
-<dd>True if sampling was successful, False otherwise.</dd>
-<dt><strong><code>sample</code></strong> :&ensp;<code>np.array</code> or <code>None</code></dt>
-<dd>array of shape (n_bands,) containing mean values for each band if sampling was successful, None otherwise.</dd>
-<dt><strong><code>poly</code></strong> :&ensp;<code>shapely.geometry.Polygon</code></dt>
-<dd>the polygon area that was sampled (=ground track coverage). Returned even if sampling was unsuccessful.</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def sample_area(self, corners_obj, bands):
-    &#34;&#34;&#34;
-    Compute mean of raster data within the polygonal area specified by its corners in object coordinates.
-
-    Parameters
-    ----------
-    corners_obj: list of tuple
-        list of (X, Y) coordinate tuples representing polygon corners.
-    bands : tuple of int
-        tuple of the band indices to be read.
-
-    Returns
-    -------
-    flag : bool
-        True if sampling was successful, False otherwise.
-    sample : np.array or None
-        array of shape (n_bands,) containing mean values for each band if sampling was successful, None otherwise.
-    poly : shapely.geometry.Polygon
-        the polygon area that was sampled (=ground track coverage). Returned even if sampling was unsuccessful.
-
-    &#34;&#34;&#34;
-    # create polygon of area of pixel projected onto terrain
-    poly = Polygon(corners_obj)
-
-    is_success, data, data_trans = self.read_data(poly, corners_obj, bands)
-
-    if not is_success:
-        return False, None, poly
-
-    # determine contained input pixels in read-in data
-    contained = features.rasterize([(poly, 1)], out_shape=data.shape[1:], fill=0, transform=data_trans)
-
-    # R_contained, C_contained = np.nonzero(contained)
-    sum_samples = np.where(contained, data, 0).sum(axis=(1, 2))    # sum sampled pixel values
-    num_samples = np.sum(contained)                                # add no. of sampled pixels
-
-    sample = sum_samples / num_samples        # compute mean sampled pixel values
-
-    return True, sample, poly</code></pre>
+    # determine contained pixels
+    contained = features.rasterize([(region_to_cut, 1)], out_shape=data.shape[1:], fill=0, transform=window_trans)
+    contained_data = np.where(contained, data, nodata)
+    return contained_data, window_trans</code></pre>
 </details>
 </dd>
 </dl>
@@ -1804,55 +1562,67 @@ GCPs without Z information are marked with GCP_Z = 999999.</dd>
 </dd>
 </dl>
 </dd>
-<dt id="satcamsim.input_imgs.Raster_processor"><code class="flex name class">
-<span>class <span class="ident">Raster_processor</span></span>
+<dt id="satcamsim.input_imgs.Input_processor"><code class="flex name class">
+<span>class <span class="ident">Input_processor</span></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Facilitate and simplify operations involving raster data used as comparison.</p></div>
+<div class="desc"><p>Facilitate and simplify operations involving the input images.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>bands</code></strong> :&ensp;<code>tuple</code> of <code>int</code></dt>
+<dd>the band indices to be read from the input data.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>Input_processor</code></strong> :&ensp;<code><a title="satcamsim.input_imgs.Input_processor" href="#satcamsim.input_imgs.Input_processor">Input_processor</a></code></dt>
+<dd>a new Input_processor instance.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Raster_processor:
-    &#34;&#34;&#34;Facilitate and simplify operations involving raster data used as comparison.&#34;&#34;&#34;
+<pre><code class="python">class Input_processor:
+    &#34;&#34;&#34;
+    Facilitate and simplify operations involving the input images.
+
+    Parameters
+    ----------
+    bands : tuple of int
+        the band indices to be read from the input data.
+
+    Returns
+    -------
+    Input_processor : Input_processor
+        a new Input_processor instance.
+
+    &#34;&#34;&#34;
 
     def __init__(self):
         self.open_files = dict()
+        self.available_files = np.array([], dtype=object)
+        self.bounds = np.empty((0, 4), dtype=float)
         return
 
-    def from_config(config, folder_out):
+    def from_config(config):
         &#34;&#34;&#34;
-        Initialize Raster_processor with config parameters.
+        Initialize a new Input_processor with the parameters specified in config.
 
         Parameters
         ----------
         config : Config
-            Config specifying the processor parameters.
-        folder_out : str
-            Path to output folder for the processor.
+            Config containing all relevant parameters.
 
         Returns
         -------
-        processor : Raster_processor
-            The initialized processor.
+        processor : Input_processor
+            The initialized Input_processor instance.
 
         &#34;&#34;&#34;
-        processor = Raster_processor()
-        processor.gsd_in = config[&#39;GSD_COMP&#39;]
-        processor.folder_in = config[&#39;COMPARE_FOLDER&#39;]
-        processor.filenames = config[&#39;COMP_FILES&#39;]
-
-        # create coordinate reference system
-        processor.crs_DOP = pyproj.CRS(&#34;epsg:25832&#34;)
-
-        processor.folder_out = folder_out
-
-        processor.glue_multipolys = config[&#39;GLUE_MULTIPOLYS&#39;]
-        if processor.glue_multipolys:
-            processor.max_dist_glue = config[&#39;MAX_DIST_GLUE&#39;]
-            processor.max_iter_glue = config[&#39;MAX_ITER_GLUE&#39;]
-            processor.glue_dist = processor.max_dist_glue / processor.max_iter_glue
-
+        processor = Input_processor()
+        processor.max_open_files = config[&#39;MAX_OPEN_FILES&#39;]
+        processor.folder_in = config[&#39;FOLDER_IN&#39;]
+        processor.file_extension = config[&#39;FILEEXTENSION_IN&#39;]
+        processor.nodata = config[&#39;NODATA_IN&#39;]
         return processor
 
     def __del__(self):
@@ -1870,19 +1640,21 @@ GCPs without Z information are marked with GCP_Z = 999999.</dd>
 
     def __enter__(self):
         &#34;&#34;&#34;
-        Open comparison files for use in context manager.
+        Return self for use in context manager.
 
         Returns
         -------
-        self : Raster_processor
-            The Raster_processor instance created for the context manager.
+        self : Input_processor
+            The Input_processor instance for the context manager.
 
         &#34;&#34;&#34;
-        if not self.filenames:
-            self.filenames = listdir(self.folder_in)
-        for filename in self.filenames:
-            self._open_file(filename)
-
+        self.available_files = np.array(glob(self.folder_in + &#39;*&#39; + self.file_extension))
+        
+        self.bounds = np.full((len(self.available_files), 4), np.nan, dtype=float)
+        for idx, file in enumerate(self.available_files):
+            with rasterio.open(file) as f:
+                self.bounds[idx, :] = f.bounds
+                
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -1907,6 +1679,85 @@ GCPs without Z information are marked with GCP_Z = 999999.</dd>
             file.close()
         return
 
+    def sample_area(self, corners_obj, bands):
+        &#34;&#34;&#34;
+        Compute mean of raster data within the polygonal area specified by its corners in object coordinates.
+
+        Parameters
+        ----------
+        corners_obj: list of tuple
+            list of (X, Y) coordinate tuples representing polygon corners.
+        bands : tuple of int
+            tuple of the band indices to be read.
+
+        Returns
+        -------
+        flag : bool
+            True if sampling was successful for all requested bands, False otherwise.
+        sample : np.array or None
+            array of shape (n_bands,) containing mean values for each band if sampling was successful, None otherwise.
+        poly : shapely.geometry.Polygon
+            the polygon area that was sampled (=ground track coverage). Returned even if sampling was unsuccessful.
+
+        &#34;&#34;&#34;
+        # create polygon of area of pixel projected onto terrain
+        poly = Polygon(corners_obj)
+
+        is_success, data_list, trans_list = self.read_data(poly, corners_obj, bands)
+
+        if not is_success:
+            return False, None, poly
+        
+        sum_samples = np.zeros((len(bands),), dtype=float)
+        num_samples = 0.
+        for data, data_trans in zip(data_list, trans_list):
+            # determine contained input pixels in read-in data
+            contained = features.rasterize([(poly, 1)], out_shape=data.shape[1:], fill=0, transform=data_trans)
+            
+            # check nodata
+            data = data[:, contained.astype(bool)]
+            if self.nodata in data:
+                return False, None, poly
+    
+            sum_samples += data.sum(axis=1)        # sum sampled pixel values per band
+            num_samples += contained.sum()         # no. of sampled pixels
+
+        sample = sum_samples / num_samples        # compute mean sampled pixel values
+
+        return True, sample, poly
+
+    def get_filenames(self, objcoords):
+        &#34;&#34;&#34;
+        Construct all file names containing specified points.
+
+        Parameters
+        ----------
+        objcoords : list[tuple]
+            list of point coordinate tuples in (X, Y) format.
+
+        Returns
+        -------
+        filenames : list[str]
+            contains unique names of the files, ordered by ascending X, if equal by ascending Y positions.
+
+        &#34;&#34;&#34;
+        if not hasattr(objcoords[0], &#34;__len__&#34;):    # if a single point is specified instead of list of points
+            return self.get_filenames([objcoords])
+
+        filenames = list()
+        
+        objcoords = sorted(objcoords)
+        for X, Y in objcoords:
+            fname = self.available_files[(self.bounds[:, 0] &lt;= X) &amp;  (self.bounds[:, 1] &lt;= Y) &amp; (X &lt;= self.bounds[:, 2]) &amp; (Y &lt;= self.bounds[:, 3])]
+            if len(fname) != 1:
+                # if file could not be uniquely identified
+                return False, None
+            
+            filenames.append(fname[0])
+            
+        filenames = list(dict.fromkeys(filenames))  # keep only unique filenames while preserving order
+        return True, filenames
+
     def _open_file(self, filename):
         &#34;&#34;&#34;
         Open specified files from disk.
@@ -1923,347 +1774,386 @@ GCPs without Z information are marked with GCP_Z = 999999.</dd>
 
         &#34;&#34;&#34;
         if filename not in self.open_files:
-            try:
-                self.open_files[filename] = rasterio.open(self.folder_in + filename)
-            except rasterio.errors.RasterioIOError:     # raised if required file not available
-                print(&#34;\r&#34; + &#34;Warning: File &#34; + filename + &#34; not found!&#34;, end=&#34;&#34;)
-                return False
-        return True
+            if len(self.open_files) &gt;= self.max_open_files:
+                self._close_files(len(self.open_files) - self.max_open_files)
 
-    def read_from_file(self, region_to_cut, file):
+            self.open_files[filename] = rasterio.open(filename)
+        return
+
+    def read_data(self, poly, vertices, bands):
         &#34;&#34;&#34;
-        Reads data contained in the specified region from file.
+        Read a rectangular bounding box containing the specified Polygon from input files.
+        The current implementation may break if input files use a CRS/transform where not X==East==right, Y==North==up.
 
         Parameters
         ----------
-        region_to_cut : Polygon
-            Region of interest, in XY object coordinates.
-        file : rasterio.DatasetReader
-            file from which data is to be read.
+        poly : shapely.geometry.Polygon
+            Polygonal ROI which will be fully covered by the read-in data.
+        vertices : np.ndarray
+            coordinates of ROI vertices.
+        bands : tuple of int
+             tuple of the band indices to be read.
 
         Returns
         -------
-        contained_data : np.ndarray
-            extracted raster data.
-        window_trans : rasterio.affine.Affine
-            transform of the extracted raster data section.
+        flag : bool
+            True if data was read in successfully, False otherwise.
+        data : np.ndarray or None
+            raster data contained in the rectangular bounding box around poly, if successful. None otherwise.
+        data_trans : rasterio.affine.Affine or None
+            Affine transform from raster data pixels to object coordinates, if successful. None otherwise.
 
         &#34;&#34;&#34;
-        X_min, Y_min, X_max, Y_max = region_to_cut.bounds
-        poly_window = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file.transform)
-        window_trans = windows.transform(poly_window, file.transform)
-        data = file.read(window=poly_window)
+        polybounds = poly.bounds
+        
+        # determine required input files from bounding box corners and try to load them if necessary
+        all_files_found, filenames = self.get_filenames([polybounds[0:2],       # SW corner    (yes
+                                                         polybounds[0::3],      # NW corner     this
+                                                         polybounds[2:0:-1],    # SE corner     is
+                                                         polybounds[2:]])       # NE corner     ugly)
+        
+        if not all_files_found:
+            # if coordinates could not be assigned to a unique input file
+            return False, None, None
+        
+        for filename in filenames:
+            if filename not in self.open_files:
+                self._open_file(filename)
+        
+        if len(filenames) == 1:
+            file = self.open_files[filenames[0]]
+            # windowed reading from input file
+            poly_window = windows.from_bounds(*polybounds, transform=file.transform)
+            data_trans = windows.transform(poly_window, file.transform)
+            data = file.read(bands, window=poly_window)
+            
+            if 0 in data.shape:
+                # can happen if only a very thin (&lt; 0.5 input pixels) part of the poly intersects with the input images
+                return False, None, None
+            return True, [data], [data_trans]
 
-        # determine contained pixels
-        contained = features.rasterize([(region_to_cut, 1)], out_shape=data.shape[1:], fill=0, transform=window_trans)
-        contained_data = np.where(contained, data, 0)
-        return contained_data, window_trans
+        data_list = []
+        trans_list = []
+        for filename in filenames:
+            file = self.open_files[filename]
+            
+            # trim bounding box to not extend beyond limits of the file
+            # (this will absolutely break if file uses a weird CRS/transform where not X==East==right, Y==North==up:
+            # rasterio orders file.bounds as &#39;left, bottom, right, top&#39;, which is not necessarily the same as &#39;X_min, Y_min, X_max, Y_max&#39;.
+            # thats&#39;s what geodesysts get for inventing stupid coordinate systems with insane axis ordering, and frankly I won&#39;t clean their mess for them)
+            windowbounds = [max(polymin, filemin) for polymin, filemin in zip(polybounds[:2], file.bounds[:2])] + [min(polymax, filemax) for polymax, filemax in zip(polybounds[2:], file.bounds[2:])]
 
-    def cut_geom(self, geom):
+            # windowed reading from input file
+            poly_window = windows.from_bounds(*windowbounds, transform=file.transform)
+            data_trans = windows.transform(poly_window, file.transform)
+            data = file.read(bands, window=poly_window)
+
+            if 0 in data.shape:
+                # can happen if only a very thin (&lt; 0.5 input pixels) part of the poly intersects with the input images
+                continue
+            
+            data_list.append(data)
+            trans_list.append(data_trans)
+
+        return True, data_list, trans_list
+
+    def _close_files(self, n_files=-1):
         &#34;&#34;&#34;
-        Cut and save region of passed-in geometry object from raster data.
-        The specified geometry is cropped to the edges of the raster data, if necessary.
-        Output is saved to the Raster_processor&#39;s folder_out.
+        Close files that have been open the longest (oldest file in dict).
 
         Parameters
         ----------
-        geom : shapely.geometry object
-            geometry object describing the region to be extracted, in EPSG:25832 coordinates.
+        n_files : int, optional
+            Number of files to close, or -1 to close all files. The default is -1.
+            Note: if n_files &gt;= len(self.open_files), all files will be closed.
 
         Returns
         -------
         None.
 
         &#34;&#34;&#34;
-        with rasterio.Env() as rio_env:
-            if self.glue_multipolys:
-                geom = self.glue_geoms(geom)    # close small gaps in the coverage
+        if n_files == -1 or n_files &gt; len(self.open_files):
+            n_files = len(self.open_files)
 
-            for filename, file in self.open_files.items():
-                
-                # CRS transformation
-                crs_comp = pyproj.CRS.from_user_input(file.crs)
-                DOP2comp = pyproj.transformer.Transformer.from_crs(self.crs_DOP, crs_comp)
-                
-                # transform geom to comparison data CRS
-                vert_coords_transformed = list(DOP2comp.itransform(geom.exterior.coords))
-                vertices_transformed = [Point(X, Y) for X, Y in vert_coords_transformed]
-                geom_transformed = Polygon(vertices_transformed)
-                
-                # crop region to edges of comparison data
-                X_lo, Y_lo, X_hi, Y_hi = file.bounds
-                region_to_cut = geom_transformed.intersection(Polygon([(X_lo, Y_lo), (X_hi, Y_lo), (X_hi, Y_hi), (X_lo, Y_hi)]))
-
-                # if no overlap exists
-                if not region_to_cut:
-                    continue
-
-                contained_data, window_trans = self.read_from_file(region_to_cut, file)
-                # write to new raster file
-                profile = file.profile
-                profile.update(height=contained_data.shape[1],
-                               width=contained_data.shape[2],
-                               transform=window_trans)
-                with rasterio.open(self.folder_out + &#39;cutout_&#39; + filename, &#39;w&#39;, **profile) as dest:
-                    for idx, band_data in enumerate(contained_data, start=1):
-                        dest.write(band_data, idx)
-        return
-
-    def glue_geoms(self, geom):
-        &#34;&#34;&#34;
-        Dilate a collection of geometries iteratively until its members can be merged into a single Polygon.
-        If a single, non-Polygon geometry object is passed, it is dilated and therefore converted to a Polygon.
-        If not all members can be unified into a single Polygon within the dilation limits, an exception is raised.
-
-        Parameters
-        ----------
-        geom : shapely.geometry object
-            geometry collection or single geometry object.
-
-        Returns
-        -------
-        geom : shapely.geometry object
-            single Polygon, if glueing was successful.
-
-        &#34;&#34;&#34;
-        for _ in range(self.max_iter_glue):
-            if isinstance(geom, Polygon):
-                return geom
-
-            geom = geom.buffer(self.glue_dist, resolution=4, cap_style=3, join_style=3)     # dilate by self.glue_dist
-            geom = unary_union([geom])      # try unifiying all members
-
-        if not isinstance(geom, Polygon):
-            raise ValueError(&#34;Dilation limit reached, geometry could not be unified into a single Polygon&#34;)</code></pre>
+        for _ in range(n_files):
+            filename, file = next(iter(self.open_files.items()))
+            file.close()
+            del self.open_files[filename]
+        return</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
-<dt id="satcamsim.input_imgs.Raster_processor.cut_geom"><code class="name flex">
-<span>def <span class="ident">cut_geom</span></span>(<span>self, geom)</span>
+<dt id="satcamsim.input_imgs.Input_processor.from_config"><code class="name flex">
+<span>def <span class="ident">from_config</span></span>(<span>config)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Cut and save region of passed-in geometry object from raster data.
-The specified geometry is cropped to the edges of the raster data, if necessary.
-Output is saved to the Raster_processor's folder_out.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>geom</code></strong> :&ensp;<code>shapely.geometry object</code></dt>
-<dd>geometry object describing the region to be extracted, in EPSG:25832 coordinates.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>None.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def cut_geom(self, geom):
-    &#34;&#34;&#34;
-    Cut and save region of passed-in geometry object from raster data.
-    The specified geometry is cropped to the edges of the raster data, if necessary.
-    Output is saved to the Raster_processor&#39;s folder_out.
-
-    Parameters
-    ----------
-    geom : shapely.geometry object
-        geometry object describing the region to be extracted, in EPSG:25832 coordinates.
-
-    Returns
-    -------
-    None.
-
-    &#34;&#34;&#34;
-    with rasterio.Env() as rio_env:
-        if self.glue_multipolys:
-            geom = self.glue_geoms(geom)    # close small gaps in the coverage
-
-        for filename, file in self.open_files.items():
-            
-            # CRS transformation
-            crs_comp = pyproj.CRS.from_user_input(file.crs)
-            DOP2comp = pyproj.transformer.Transformer.from_crs(self.crs_DOP, crs_comp)
-            
-            # transform geom to comparison data CRS
-            vert_coords_transformed = list(DOP2comp.itransform(geom.exterior.coords))
-            vertices_transformed = [Point(X, Y) for X, Y in vert_coords_transformed]
-            geom_transformed = Polygon(vertices_transformed)
-            
-            # crop region to edges of comparison data
-            X_lo, Y_lo, X_hi, Y_hi = file.bounds
-            region_to_cut = geom_transformed.intersection(Polygon([(X_lo, Y_lo), (X_hi, Y_lo), (X_hi, Y_hi), (X_lo, Y_hi)]))
-
-            # if no overlap exists
-            if not region_to_cut:
-                continue
-
-            contained_data, window_trans = self.read_from_file(region_to_cut, file)
-            # write to new raster file
-            profile = file.profile
-            profile.update(height=contained_data.shape[1],
-                           width=contained_data.shape[2],
-                           transform=window_trans)
-            with rasterio.open(self.folder_out + &#39;cutout_&#39; + filename, &#39;w&#39;, **profile) as dest:
-                for idx, band_data in enumerate(contained_data, start=1):
-                    dest.write(band_data, idx)
-    return</code></pre>
-</details>
-</dd>
-<dt id="satcamsim.input_imgs.Raster_processor.from_config"><code class="name flex">
-<span>def <span class="ident">from_config</span></span>(<span>config, folder_out)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Initialize Raster_processor with config parameters.</p>
+<div class="desc"><p>Initialize a new Input_processor with the parameters specified in config.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>config</code></strong> :&ensp;<code>Config</code></dt>
-<dd>Config specifying the processor parameters.</dd>
-<dt><strong><code>folder_out</code></strong> :&ensp;<code>str</code></dt>
-<dd>Path to output folder for the processor.</dd>
+<dd>Config containing all relevant parameters.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><code>processor</code></strong> :&ensp;<code><a title="satcamsim.input_imgs.Raster_processor" href="#satcamsim.input_imgs.Raster_processor">Raster_processor</a></code></dt>
-<dd>The initialized processor.</dd>
+<dt><strong><code>processor</code></strong> :&ensp;<code><a title="satcamsim.input_imgs.Input_processor" href="#satcamsim.input_imgs.Input_processor">Input_processor</a></code></dt>
+<dd>The initialized Input_processor instance.</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def from_config(config, folder_out):
+<pre><code class="python">def from_config(config):
     &#34;&#34;&#34;
-    Initialize Raster_processor with config parameters.
+    Initialize a new Input_processor with the parameters specified in config.
 
     Parameters
     ----------
     config : Config
-        Config specifying the processor parameters.
-    folder_out : str
-        Path to output folder for the processor.
+        Config containing all relevant parameters.
 
     Returns
     -------
-    processor : Raster_processor
-        The initialized processor.
+    processor : Input_processor
+        The initialized Input_processor instance.
 
     &#34;&#34;&#34;
-    processor = Raster_processor()
-    processor.gsd_in = config[&#39;GSD_COMP&#39;]
-    processor.folder_in = config[&#39;COMPARE_FOLDER&#39;]
-    processor.filenames = config[&#39;COMP_FILES&#39;]
-
-    # create coordinate reference system
-    processor.crs_DOP = pyproj.CRS(&#34;epsg:25832&#34;)
-
-    processor.folder_out = folder_out
-
-    processor.glue_multipolys = config[&#39;GLUE_MULTIPOLYS&#39;]
-    if processor.glue_multipolys:
-        processor.max_dist_glue = config[&#39;MAX_DIST_GLUE&#39;]
-        processor.max_iter_glue = config[&#39;MAX_ITER_GLUE&#39;]
-        processor.glue_dist = processor.max_dist_glue / processor.max_iter_glue
-
+    processor = Input_processor()
+    processor.max_open_files = config[&#39;MAX_OPEN_FILES&#39;]
+    processor.folder_in = config[&#39;FOLDER_IN&#39;]
+    processor.file_extension = config[&#39;FILEEXTENSION_IN&#39;]
+    processor.nodata = config[&#39;NODATA_IN&#39;]
     return processor</code></pre>
 </details>
 </dd>
-<dt id="satcamsim.input_imgs.Raster_processor.glue_geoms"><code class="name flex">
-<span>def <span class="ident">glue_geoms</span></span>(<span>self, geom)</span>
+<dt id="satcamsim.input_imgs.Input_processor.get_filenames"><code class="name flex">
+<span>def <span class="ident">get_filenames</span></span>(<span>self, objcoords)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Dilate a collection of geometries iteratively until its members can be merged into a single Polygon.
-If a single, non-Polygon geometry object is passed, it is dilated and therefore converted to a Polygon.
-If not all members can be unified into a single Polygon within the dilation limits, an exception is raised.</p>
+<div class="desc"><p>Construct all file names containing specified points.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>geom</code></strong> :&ensp;<code>shapely.geometry object</code></dt>
-<dd>geometry collection or single geometry object.</dd>
+<dt><strong><code>objcoords</code></strong> :&ensp;<code>list[tuple]</code></dt>
+<dd>list of point coordinate tuples in (X, Y) format.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><code>geom</code></strong> :&ensp;<code>shapely.geometry object</code></dt>
-<dd>single Polygon, if glueing was successful.</dd>
+<dt><strong><code>filenames</code></strong> :&ensp;<code>list[str]</code></dt>
+<dd>contains unique names of the files, ordered by ascending X, if equal by ascending Y positions.</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def glue_geoms(self, geom):
+<pre><code class="python">def get_filenames(self, objcoords):
     &#34;&#34;&#34;
-    Dilate a collection of geometries iteratively until its members can be merged into a single Polygon.
-    If a single, non-Polygon geometry object is passed, it is dilated and therefore converted to a Polygon.
-    If not all members can be unified into a single Polygon within the dilation limits, an exception is raised.
+    Construct all file names containing specified points.
 
     Parameters
     ----------
-    geom : shapely.geometry object
-        geometry collection or single geometry object.
+    objcoords : list[tuple]
+        list of point coordinate tuples in (X, Y) format.
 
     Returns
     -------
-    geom : shapely.geometry object
-        single Polygon, if glueing was successful.
+    filenames : list[str]
+        contains unique names of the files, ordered by ascending X, if equal by ascending Y positions.
 
     &#34;&#34;&#34;
-    for _ in range(self.max_iter_glue):
-        if isinstance(geom, Polygon):
-            return geom
+    if not hasattr(objcoords[0], &#34;__len__&#34;):    # if a single point is specified instead of list of points
+        return self.get_filenames([objcoords])
 
-        geom = geom.buffer(self.glue_dist, resolution=4, cap_style=3, join_style=3)     # dilate by self.glue_dist
-        geom = unary_union([geom])      # try unifiying all members
-
-    if not isinstance(geom, Polygon):
-        raise ValueError(&#34;Dilation limit reached, geometry could not be unified into a single Polygon&#34;)</code></pre>
+    filenames = list()
+    
+    objcoords = sorted(objcoords)
+    for X, Y in objcoords:
+        fname = self.available_files[(self.bounds[:, 0] &lt;= X) &amp;  (self.bounds[:, 1] &lt;= Y) &amp; (X &lt;= self.bounds[:, 2]) &amp; (Y &lt;= self.bounds[:, 3])]
+        if len(fname) != 1:
+            # if file could not be uniquely identified
+            return False, None
+        
+        filenames.append(fname[0])
+        
+    filenames = list(dict.fromkeys(filenames))  # keep only unique filenames while preserving order
+    return True, filenames</code></pre>
 </details>
 </dd>
-<dt id="satcamsim.input_imgs.Raster_processor.read_from_file"><code class="name flex">
-<span>def <span class="ident">read_from_file</span></span>(<span>self, region_to_cut, file)</span>
+<dt id="satcamsim.input_imgs.Input_processor.read_data"><code class="name flex">
+<span>def <span class="ident">read_data</span></span>(<span>self, poly, vertices, bands)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Reads data contained in the specified region from file.</p>
+<div class="desc"><p>Read a rectangular bounding box containing the specified Polygon from input files.
+The current implementation may break if input files use a CRS/transform where not X==East==right, Y==North==up.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>region_to_cut</code></strong> :&ensp;<code>Polygon</code></dt>
-<dd>Region of interest, in XY object coordinates.</dd>
-<dt><strong><code>file</code></strong> :&ensp;<code>rasterio.DatasetReader</code></dt>
-<dd>file from which data is to be read.</dd>
+<dt><strong><code>poly</code></strong> :&ensp;<code>shapely.geometry.Polygon</code></dt>
+<dd>Polygonal ROI which will be fully covered by the read-in data.</dd>
+<dt><strong><code>vertices</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>coordinates of ROI vertices.</dd>
+<dt><strong><code>bands</code></strong> :&ensp;<code>tuple</code> of <code>int</code></dt>
+<dd>tuple of the band indices to be read.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><code>contained_data</code></strong> :&ensp;<code>np.ndarray</code></dt>
-<dd>extracted raster data.</dd>
-<dt><strong><code>window_trans</code></strong> :&ensp;<code>rasterio.affine.Affine</code></dt>
-<dd>transform of the extracted raster data section.</dd>
+<dt><strong><code>flag</code></strong> :&ensp;<code>bool</code></dt>
+<dd>True if data was read in successfully, False otherwise.</dd>
+<dt><strong><code>data</code></strong> :&ensp;<code>np.ndarray</code> or <code>None</code></dt>
+<dd>raster data contained in the rectangular bounding box around poly, if successful. None otherwise.</dd>
+<dt><strong><code>data_trans</code></strong> :&ensp;<code>rasterio.affine.Affine</code> or <code>None</code></dt>
+<dd>Affine transform from raster data pixels to object coordinates, if successful. None otherwise.</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def read_from_file(self, region_to_cut, file):
+<pre><code class="python">def read_data(self, poly, vertices, bands):
     &#34;&#34;&#34;
-    Reads data contained in the specified region from file.
+    Read a rectangular bounding box containing the specified Polygon from input files.
+    The current implementation may break if input files use a CRS/transform where not X==East==right, Y==North==up.
 
     Parameters
     ----------
-    region_to_cut : Polygon
-        Region of interest, in XY object coordinates.
-    file : rasterio.DatasetReader
-        file from which data is to be read.
+    poly : shapely.geometry.Polygon
+        Polygonal ROI which will be fully covered by the read-in data.
+    vertices : np.ndarray
+        coordinates of ROI vertices.
+    bands : tuple of int
+         tuple of the band indices to be read.
 
     Returns
     -------
-    contained_data : np.ndarray
-        extracted raster data.
-    window_trans : rasterio.affine.Affine
-        transform of the extracted raster data section.
+    flag : bool
+        True if data was read in successfully, False otherwise.
+    data : np.ndarray or None
+        raster data contained in the rectangular bounding box around poly, if successful. None otherwise.
+    data_trans : rasterio.affine.Affine or None
+        Affine transform from raster data pixels to object coordinates, if successful. None otherwise.
 
     &#34;&#34;&#34;
-    X_min, Y_min, X_max, Y_max = region_to_cut.bounds
-    poly_window = windows.from_bounds(X_min, Y_min, X_max, Y_max, transform=file.transform)
-    window_trans = windows.transform(poly_window, file.transform)
-    data = file.read(window=poly_window)
+    polybounds = poly.bounds
+    
+    # determine required input files from bounding box corners and try to load them if necessary
+    all_files_found, filenames = self.get_filenames([polybounds[0:2],       # SW corner    (yes
+                                                     polybounds[0::3],      # NW corner     this
+                                                     polybounds[2:0:-1],    # SE corner     is
+                                                     polybounds[2:]])       # NE corner     ugly)
+    
+    if not all_files_found:
+        # if coordinates could not be assigned to a unique input file
+        return False, None, None
+    
+    for filename in filenames:
+        if filename not in self.open_files:
+            self._open_file(filename)
+    
+    if len(filenames) == 1:
+        file = self.open_files[filenames[0]]
+        # windowed reading from input file
+        poly_window = windows.from_bounds(*polybounds, transform=file.transform)
+        data_trans = windows.transform(poly_window, file.transform)
+        data = file.read(bands, window=poly_window)
+        
+        if 0 in data.shape:
+            # can happen if only a very thin (&lt; 0.5 input pixels) part of the poly intersects with the input images
+            return False, None, None
+        return True, [data], [data_trans]
 
-    # determine contained pixels
-    contained = features.rasterize([(region_to_cut, 1)], out_shape=data.shape[1:], fill=0, transform=window_trans)
-    contained_data = np.where(contained, data, 0)
-    return contained_data, window_trans</code></pre>
+    data_list = []
+    trans_list = []
+    for filename in filenames:
+        file = self.open_files[filename]
+        
+        # trim bounding box to not extend beyond limits of the file
+        # (this will absolutely break if file uses a weird CRS/transform where not X==East==right, Y==North==up:
+        # rasterio orders file.bounds as &#39;left, bottom, right, top&#39;, which is not necessarily the same as &#39;X_min, Y_min, X_max, Y_max&#39;.
+        # thats&#39;s what geodesysts get for inventing stupid coordinate systems with insane axis ordering, and frankly I won&#39;t clean their mess for them)
+        windowbounds = [max(polymin, filemin) for polymin, filemin in zip(polybounds[:2], file.bounds[:2])] + [min(polymax, filemax) for polymax, filemax in zip(polybounds[2:], file.bounds[2:])]
+
+        # windowed reading from input file
+        poly_window = windows.from_bounds(*windowbounds, transform=file.transform)
+        data_trans = windows.transform(poly_window, file.transform)
+        data = file.read(bands, window=poly_window)
+
+        if 0 in data.shape:
+            # can happen if only a very thin (&lt; 0.5 input pixels) part of the poly intersects with the input images
+            continue
+        
+        data_list.append(data)
+        trans_list.append(data_trans)
+
+    return True, data_list, trans_list</code></pre>
+</details>
+</dd>
+<dt id="satcamsim.input_imgs.Input_processor.sample_area"><code class="name flex">
+<span>def <span class="ident">sample_area</span></span>(<span>self, corners_obj, bands)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Compute mean of raster data within the polygonal area specified by its corners in object coordinates.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>corners_obj</code></strong> :&ensp;<code>list</code> of <code>tuple</code></dt>
+<dd>list of (X, Y) coordinate tuples representing polygon corners.</dd>
+<dt><strong><code>bands</code></strong> :&ensp;<code>tuple</code> of <code>int</code></dt>
+<dd>tuple of the band indices to be read.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>flag</code></strong> :&ensp;<code>bool</code></dt>
+<dd>True if sampling was successful for all requested bands, False otherwise.</dd>
+<dt><strong><code>sample</code></strong> :&ensp;<code>np.array</code> or <code>None</code></dt>
+<dd>array of shape (n_bands,) containing mean values for each band if sampling was successful, None otherwise.</dd>
+<dt><strong><code>poly</code></strong> :&ensp;<code>shapely.geometry.Polygon</code></dt>
+<dd>the polygon area that was sampled (=ground track coverage). Returned even if sampling was unsuccessful.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sample_area(self, corners_obj, bands):
+    &#34;&#34;&#34;
+    Compute mean of raster data within the polygonal area specified by its corners in object coordinates.
+
+    Parameters
+    ----------
+    corners_obj: list of tuple
+        list of (X, Y) coordinate tuples representing polygon corners.
+    bands : tuple of int
+        tuple of the band indices to be read.
+
+    Returns
+    -------
+    flag : bool
+        True if sampling was successful for all requested bands, False otherwise.
+    sample : np.array or None
+        array of shape (n_bands,) containing mean values for each band if sampling was successful, None otherwise.
+    poly : shapely.geometry.Polygon
+        the polygon area that was sampled (=ground track coverage). Returned even if sampling was unsuccessful.
+
+    &#34;&#34;&#34;
+    # create polygon of area of pixel projected onto terrain
+    poly = Polygon(corners_obj)
+
+    is_success, data_list, trans_list = self.read_data(poly, corners_obj, bands)
+
+    if not is_success:
+        return False, None, poly
+    
+    sum_samples = np.zeros((len(bands),), dtype=float)
+    num_samples = 0.
+    for data, data_trans in zip(data_list, trans_list):
+        # determine contained input pixels in read-in data
+        contained = features.rasterize([(poly, 1)], out_shape=data.shape[1:], fill=0, transform=data_trans)
+        
+        # check nodata
+        data = data[:, contained.astype(bool)]
+        if self.nodata in data:
+            return False, None, poly
+
+        sum_samples += data.sum(axis=1)        # sum sampled pixel values per band
+        num_samples += contained.sum()         # no. of sampled pixels
+
+    sample = sum_samples / num_samples        # compute mean sampled pixel values
+
+    return True, sample, poly</code></pre>
 </details>
 </dd>
 </dl>
@@ -2285,12 +2175,12 @@ If not all members can be unified into a single Polygon within the dilation limi
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="satcamsim.input_imgs.DOP_processor" href="#satcamsim.input_imgs.DOP_processor">DOP_processor</a></code></h4>
+<h4><code><a title="satcamsim.input_imgs.Comp_processor" href="#satcamsim.input_imgs.Comp_processor">Comp_processor</a></code></h4>
 <ul class="">
-<li><code><a title="satcamsim.input_imgs.DOP_processor.from_config" href="#satcamsim.input_imgs.DOP_processor.from_config">from_config</a></code></li>
-<li><code><a title="satcamsim.input_imgs.DOP_processor.get_filenames" href="#satcamsim.input_imgs.DOP_processor.get_filenames">get_filenames</a></code></li>
-<li><code><a title="satcamsim.input_imgs.DOP_processor.read_data" href="#satcamsim.input_imgs.DOP_processor.read_data">read_data</a></code></li>
-<li><code><a title="satcamsim.input_imgs.DOP_processor.sample_area" href="#satcamsim.input_imgs.DOP_processor.sample_area">sample_area</a></code></li>
+<li><code><a title="satcamsim.input_imgs.Comp_processor.cut_geom" href="#satcamsim.input_imgs.Comp_processor.cut_geom">cut_geom</a></code></li>
+<li><code><a title="satcamsim.input_imgs.Comp_processor.from_config" href="#satcamsim.input_imgs.Comp_processor.from_config">from_config</a></code></li>
+<li><code><a title="satcamsim.input_imgs.Comp_processor.glue_geoms" href="#satcamsim.input_imgs.Comp_processor.glue_geoms">glue_geoms</a></code></li>
+<li><code><a title="satcamsim.input_imgs.Comp_processor.read_from_file" href="#satcamsim.input_imgs.Comp_processor.read_from_file">read_from_file</a></code></li>
 </ul>
 </li>
 <li>
@@ -2301,12 +2191,12 @@ If not all members can be unified into a single Polygon within the dilation limi
 </ul>
 </li>
 <li>
-<h4><code><a title="satcamsim.input_imgs.Raster_processor" href="#satcamsim.input_imgs.Raster_processor">Raster_processor</a></code></h4>
+<h4><code><a title="satcamsim.input_imgs.Input_processor" href="#satcamsim.input_imgs.Input_processor">Input_processor</a></code></h4>
 <ul class="">
-<li><code><a title="satcamsim.input_imgs.Raster_processor.cut_geom" href="#satcamsim.input_imgs.Raster_processor.cut_geom">cut_geom</a></code></li>
-<li><code><a title="satcamsim.input_imgs.Raster_processor.from_config" href="#satcamsim.input_imgs.Raster_processor.from_config">from_config</a></code></li>
-<li><code><a title="satcamsim.input_imgs.Raster_processor.glue_geoms" href="#satcamsim.input_imgs.Raster_processor.glue_geoms">glue_geoms</a></code></li>
-<li><code><a title="satcamsim.input_imgs.Raster_processor.read_from_file" href="#satcamsim.input_imgs.Raster_processor.read_from_file">read_from_file</a></code></li>
+<li><code><a title="satcamsim.input_imgs.Input_processor.from_config" href="#satcamsim.input_imgs.Input_processor.from_config">from_config</a></code></li>
+<li><code><a title="satcamsim.input_imgs.Input_processor.get_filenames" href="#satcamsim.input_imgs.Input_processor.get_filenames">get_filenames</a></code></li>
+<li><code><a title="satcamsim.input_imgs.Input_processor.read_data" href="#satcamsim.input_imgs.Input_processor.read_data">read_data</a></code></li>
+<li><code><a title="satcamsim.input_imgs.Input_processor.sample_area" href="#satcamsim.input_imgs.Input_processor.sample_area">sample_area</a></code></li>
 </ul>
 </li>
 </ul>

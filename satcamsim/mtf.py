@@ -1,41 +1,44 @@
+"""Provides functions to compute modulation transfer functions. More theoretical background in the paper:
+    Lenz, N. & Greza, M. (2023): Simulation of Earth Observation Data Utilizing a Virtual Satellite Camera. 43. Wissenschaftlich-Technische Jahrestagung der DGPF, Publikationen der Deutschen Gesellschaft für Photogrammetrie und Fernerkundung, 31.
+    Parameters can only be adjusted directly in the mtf.py file for now."""
 import numpy as np
 import scipy.fftpack as sfft
 
-H = 469600      # avg altitude above ground [m]
-gsd_y = 3.59    # avg GSD in flight direction [m]
+H = 469600      #: avg altitude above ground [m]
+gsd_y = 3.59    #: avg GSD in flight direction [m]
 
-w_px = 6e-6   # pixel size [m]
-t_int = 1 / 2000    # integration time [s]
-t_s = 1 / 2000  # sample time [s]
-f = .65         # effective focal length [m]
+w_px = 6e-6   #: pixel size [m]
+t_int = 1 / 2000    #: integration time [s]
+t_s = 1 / 2000  #: sample time [s]
+f = .65         #: effective focal length [m]
 
-p_x = w_px      # across-sensor pixel pitch [m]
-p_y = w_px      # pitch between TDI stages [m]
-p_y_eff = gsd_y * f / H     # effective along-flight pixel pitch [m]
-v_y = gsd_y / t_s   # avg in-flight velocity [m/s]
+p_x = w_px      #: across-sensor pixel pitch [m]
+p_y = w_px      #: pitch between TDI stages [m]
+p_y_eff = gsd_y * f / H     #: effective along-flight pixel pitch [m]
+v_y = gsd_y / t_s   #: avg in-flight velocity [m/s]
 
-D = .105        # primary aperture [m]
-D_obs = .05   # obscuration mirror diameter [m]
-F = f / D       # F number
+D = .105        #: primary aperture [m]
+D_obs = .05   #: obscuration mirror diameter [m]
+F = f / D       #: F number
 eps = D_obs / D
 k_Nyq_x = 1 / (2 * p_x)
 k_Nyq_y = 1 / (2 * p_y_eff)
 
-Aa = 0      # atmospheric absorption [km^-1]
-Sa = .25e-3 # atmospheric scattering [km^-1]
-z = 6.6     # optical path length [km]
+Aa = 0      #: atmospheric absorption [km^-1]
+Sa = .25e-3 #: atmospheric scattering [km^-1]
+z = 6.6     #: optical path length [km]
 
-W_RMS = .1    # wavefront error RMS
+W_RMS = .1    #: wavefront error RMS
 
-sigma_jitter = 0.6e-6   # jitter standard deviation [m]
+sigma_jitter = 0.6e-6   #: jitter standard deviation [m]
 
-l_diffusion = 60e-6     # diffusion length [m]
-l_depl = 6e-6         # depletion width [m]
-alpha = 1e6             # absorption coefficient
+l_diffusion = 60e-6     #: diffusion length [m]
+l_depl = 6e-6         #: depletion width [m]
+alpha = 1e6             #: absorption coefficient
 
-theta = np.deg2rad(.3)  # angle between direction of flight/orientation of TDI stages [rad]
-d_vy = 60e-6            # velocity mismatch between satellite movement/TDI charge transfer in y direction [m/s]
-N_TDI = 16              # number of TDI stages
+theta = np.deg2rad(.3)  #: angle between direction of flight/orientation of TDI stages [rad]
+d_vy = 60e-6            #: velocity mismatch between satellite movement/TDI charge transfer in y direction [m/s]
+N_TDI = 16              #: number of TDI stages
 
 d_smear = v_y * t_int * f / H
 
@@ -136,11 +139,16 @@ def MTF_sim(k_x, k_y, lbda):
 def MTF_tot(k_x, k_y, lbda):
     return MTF_sim(k_x, k_y, lbda) * MTF_sampling(k_x, k_y) * MTF_smear(k_x, k_y) * MTF_aperture_x(k_x, k_y)
 
-def get_PSF():
+def get_PSF(wavelengths=[665e-9, 560e-9, 490e-9]):
     """
     Computes MTF based on imaging chain approach, and Fourier-transforms it into PSF.
-    Computations for RGB bands at 665, 560, and 490 nm.
-    Note that parameters can only be adjusted directly in the mtf.py file for now.
+    Note that parameters (other than wavelength) can only be adjusted directly in the mtf.py file for now.
+    
+    Parameters
+    ----------
+    wavelenths : list of float, optional
+        List of wavelengths (in meters) at which PSF will be computed.
+        Defaults to RGB wavelengths at 665, 560, and 490 nm.
 
     Returns
     -------
@@ -148,8 +156,7 @@ def get_PSF():
         filter mask corresponding to PSF, sampled at pixel grid nodes.
 
     """
-
-    n_samples = 250  # must be even!
+    n_samples = 250  #: must be even!
     f_max = 2 / w_px
 
     k_x = np.linspace(1, f_max, int(n_samples / 2))
@@ -159,8 +166,8 @@ def get_PSF():
     kk_x, kk_y = np.meshgrid(k_x, k_y)
 
     PSF_2Ds = []
-    lambdas = [665e-9, 560e-9, 490e-9]
-    for lbda in lambdas:
+    
+    for lbda in wavelengths:
         MTF_2D = MTF_sim(kk_x, kk_y, lbda)
         PSF_2Ds.append(np.fft.ifftshift(np.fft.ifft2(MTF_2D).real))
 

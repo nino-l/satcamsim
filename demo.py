@@ -1,4 +1,4 @@
-"""While exemplary orbit data and GCPs come with this demo, DOP data and - if desired - comparison raster data have to be supplied as described in the README."""
+"""While exemplary orbit data and GCPs come with this demo, input data and - if desired - comparison raster data have to be supplied as described in the README."""
 import satcamsim as sim
 
 
@@ -21,7 +21,7 @@ def main():
     my_config = sim.get_config()
 
     # manually adjust some config parameters
-    my_config['DOP_FOLDER'] = './demo/dop/'
+    my_config['FOLDER_IN'] = './demo/dop/'
     my_config['COMPARE_FOLDER'] = './demo/comp/'
 
     my_config['OUTPUT_FOLDER'] = './demo/output/'
@@ -32,7 +32,7 @@ def main():
 
     # read poses from .csv orbit description
     all_poses = sim.get_pose_list('./demo/orbits/orbit.csv')
-    # only keep poses for which DOP files exist
+    # only keep poses for which input files exist
     my_poses = sim.filter_poses(all_poses, my_camera, config=my_config)
     
     # only keep a few hundred line images to speed up demo - delete the next line to simulate the full swath (4630 lines for the DOP supplied with the metalink file)
@@ -51,7 +51,7 @@ def main():
         # save results of GCP localization as .csv
         out.save_csv(found_gcps, header=('GCP_ID', 'row_out (line_index)', 'col_out (pixel_index)', 'sensor_name', 'point_X', 'point_Y', 'point_Z'), filename='found_GCPs.csv')
 
-        with sim.Raster_processor.from_config(my_config, folder_out=out.out_folder) as raster:
+        with sim.Comp_processor.from_config(my_config, folder_out=out.out_folder) as raster:
             raster.cut_geom(coverage)
     return
 

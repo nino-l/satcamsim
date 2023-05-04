@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
 <title>satcamsim.mtf API documentation</title>
-<meta name="description" content="" />
+<meta name="description" content="Provides functions to compute modulation transfer functions. More theoretical background in the paper:
+Lenz, N. &amp; Greza, M. (2023): Simulation of …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -22,48 +23,54 @@
 <h1 class="title">Module <code>satcamsim.mtf</code></h1>
 </header>
 <section id="section-intro">
+<p>Provides functions to compute modulation transfer functions. More theoretical background in the paper:
+Lenz, N. &amp; Greza, M. (2023): Simulation of Earth Observation Data Utilizing a Virtual Satellite Camera. 43. Wissenschaftlich-Technische Jahrestagung der DGPF, Publikationen der Deutschen Gesellschaft für Photogrammetrie und Fernerkundung, 31.
+Parameters can only be adjusted directly in the mtf.py file for now.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">import numpy as np
+<pre><code class="python">&#34;&#34;&#34;Provides functions to compute modulation transfer functions. More theoretical background in the paper:
+    Lenz, N. &amp; Greza, M. (2023): Simulation of Earth Observation Data Utilizing a Virtual Satellite Camera. 43. Wissenschaftlich-Technische Jahrestagung der DGPF, Publikationen der Deutschen Gesellschaft für Photogrammetrie und Fernerkundung, 31.
+    Parameters can only be adjusted directly in the mtf.py file for now.&#34;&#34;&#34;
+import numpy as np
 import scipy.fftpack as sfft
 
-H = 469600      # avg altitude above ground [m]
-gsd_y = 3.59    # avg GSD in flight direction [m]
+H = 469600      #: avg altitude above ground [m]
+gsd_y = 3.59    #: avg GSD in flight direction [m]
 
-w_px = 6e-6   # pixel size [m]
-t_int = 1 / 2000    # integration time [s]
-t_s = 1 / 2000  # sample time [s]
-f = .65         # effective focal length [m]
+w_px = 6e-6   #: pixel size [m]
+t_int = 1 / 2000    #: integration time [s]
+t_s = 1 / 2000  #: sample time [s]
+f = .65         #: effective focal length [m]
 
-p_x = w_px      # across-sensor pixel pitch [m]
-p_y = w_px      # pitch between TDI stages [m]
-p_y_eff = gsd_y * f / H     # effective along-flight pixel pitch [m]
-v_y = gsd_y / t_s   # avg in-flight velocity [m/s]
+p_x = w_px      #: across-sensor pixel pitch [m]
+p_y = w_px      #: pitch between TDI stages [m]
+p_y_eff = gsd_y * f / H     #: effective along-flight pixel pitch [m]
+v_y = gsd_y / t_s   #: avg in-flight velocity [m/s]
 
-D = .105        # primary aperture [m]
-D_obs = .05   # obscuration mirror diameter [m]
-F = f / D       # F number
+D = .105        #: primary aperture [m]
+D_obs = .05   #: obscuration mirror diameter [m]
+F = f / D       #: F number
 eps = D_obs / D
 k_Nyq_x = 1 / (2 * p_x)
 k_Nyq_y = 1 / (2 * p_y_eff)
 
-Aa = 0      # atmospheric absorption [km^-1]
-Sa = .25e-3 # atmospheric scattering [km^-1]
-z = 6.6     # optical path length [km]
+Aa = 0      #: atmospheric absorption [km^-1]
+Sa = .25e-3 #: atmospheric scattering [km^-1]
+z = 6.6     #: optical path length [km]
 
-W_RMS = .1    # wavefront error RMS
+W_RMS = .1    #: wavefront error RMS
 
-sigma_jitter = 0.6e-6   # jitter standard deviation [m]
+sigma_jitter = 0.6e-6   #: jitter standard deviation [m]
 
-l_diffusion = 60e-6     # diffusion length [m]
-l_depl = 6e-6         # depletion width [m]
-alpha = 1e6             # absorption coefficient
+l_diffusion = 60e-6     #: diffusion length [m]
+l_depl = 6e-6         #: depletion width [m]
+alpha = 1e6             #: absorption coefficient
 
-theta = np.deg2rad(.3)  # angle between direction of flight/orientation of TDI stages [rad]
-d_vy = 60e-6            # velocity mismatch between satellite movement/TDI charge transfer in y direction [m/s]
-N_TDI = 16              # number of TDI stages
+theta = np.deg2rad(.3)  #: angle between direction of flight/orientation of TDI stages [rad]
+d_vy = 60e-6            #: velocity mismatch between satellite movement/TDI charge transfer in y direction [m/s]
+N_TDI = 16              #: number of TDI stages
 
 d_smear = v_y * t_int * f / H
 
@@ -164,11 +171,16 @@ def MTF_sim(k_x, k_y, lbda):
 def MTF_tot(k_x, k_y, lbda):
     return MTF_sim(k_x, k_y, lbda) * MTF_sampling(k_x, k_y) * MTF_smear(k_x, k_y) * MTF_aperture_x(k_x, k_y)
 
-def get_PSF():
+def get_PSF(wavelengths=[665e-9, 560e-9, 490e-9]):
     &#34;&#34;&#34;
     Computes MTF based on imaging chain approach, and Fourier-transforms it into PSF.
-    Computations for RGB bands at 665, 560, and 490 nm.
-    Note that parameters can only be adjusted directly in the mtf.py file for now.
+    Note that parameters (other than wavelength) can only be adjusted directly in the mtf.py file for now.
+    
+    Parameters
+    ----------
+    wavelenths : list of float, optional
+        List of wavelengths (in meters) at which PSF will be computed.
+        Defaults to RGB wavelengths at 665, 560, and 490 nm.
 
     Returns
     -------
@@ -176,8 +188,7 @@ def get_PSF():
         filter mask corresponding to PSF, sampled at pixel grid nodes.
 
     &#34;&#34;&#34;
-
-    n_samples = 250  # must be even!
+    n_samples = 250  #: must be even!
     f_max = 2 / w_px
 
     k_x = np.linspace(1, f_max, int(n_samples / 2))
@@ -187,8 +198,8 @@ def get_PSF():
     kk_x, kk_y = np.meshgrid(k_x, k_y)
 
     PSF_2Ds = []
-    lambdas = [665e-9, 560e-9, 490e-9]
-    for lbda in lambdas:
+    
+    for lbda in wavelengths:
         MTF_2D = MTF_sim(kk_x, kk_y, lbda)
         PSF_2Ds.append(np.fft.ifftshift(np.fft.ifft2(MTF_2D).real))
 
@@ -223,6 +234,105 @@ def trim_PSF(psf, size):
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-variables">Global variables</h2>
+<dl>
+<dt id="satcamsim.mtf.Aa"><code class="name">var <span class="ident">Aa</span></code></dt>
+<dd>
+<div class="desc"><p>atmospheric absorption [km^-1]</p></div>
+</dd>
+<dt id="satcamsim.mtf.D"><code class="name">var <span class="ident">D</span></code></dt>
+<dd>
+<div class="desc"><p>primary aperture [m]</p></div>
+</dd>
+<dt id="satcamsim.mtf.D_obs"><code class="name">var <span class="ident">D_obs</span></code></dt>
+<dd>
+<div class="desc"><p>obscuration mirror diameter [m]</p></div>
+</dd>
+<dt id="satcamsim.mtf.F"><code class="name">var <span class="ident">F</span></code></dt>
+<dd>
+<div class="desc"><p>F number</p></div>
+</dd>
+<dt id="satcamsim.mtf.H"><code class="name">var <span class="ident">H</span></code></dt>
+<dd>
+<div class="desc"><p>avg altitude above ground [m]</p></div>
+</dd>
+<dt id="satcamsim.mtf.N_TDI"><code class="name">var <span class="ident">N_TDI</span></code></dt>
+<dd>
+<div class="desc"><p>number of TDI stages</p></div>
+</dd>
+<dt id="satcamsim.mtf.Sa"><code class="name">var <span class="ident">Sa</span></code></dt>
+<dd>
+<div class="desc"><p>atmospheric scattering [km^-1]</p></div>
+</dd>
+<dt id="satcamsim.mtf.W_RMS"><code class="name">var <span class="ident">W_RMS</span></code></dt>
+<dd>
+<div class="desc"><p>wavefront error RMS</p></div>
+</dd>
+<dt id="satcamsim.mtf.alpha"><code class="name">var <span class="ident">alpha</span></code></dt>
+<dd>
+<div class="desc"><p>absorption coefficient</p></div>
+</dd>
+<dt id="satcamsim.mtf.d_vy"><code class="name">var <span class="ident">d_vy</span></code></dt>
+<dd>
+<div class="desc"><p>velocity mismatch between satellite movement/TDI charge transfer in y direction [m/s]</p></div>
+</dd>
+<dt id="satcamsim.mtf.f"><code class="name">var <span class="ident">f</span></code></dt>
+<dd>
+<div class="desc"><p>effective focal length [m]</p></div>
+</dd>
+<dt id="satcamsim.mtf.gsd_y"><code class="name">var <span class="ident">gsd_y</span></code></dt>
+<dd>
+<div class="desc"><p>avg GSD in flight direction [m]</p></div>
+</dd>
+<dt id="satcamsim.mtf.l_depl"><code class="name">var <span class="ident">l_depl</span></code></dt>
+<dd>
+<div class="desc"><p>depletion width [m]</p></div>
+</dd>
+<dt id="satcamsim.mtf.l_diffusion"><code class="name">var <span class="ident">l_diffusion</span></code></dt>
+<dd>
+<div class="desc"><p>diffusion length [m]</p></div>
+</dd>
+<dt id="satcamsim.mtf.p_x"><code class="name">var <span class="ident">p_x</span></code></dt>
+<dd>
+<div class="desc"><p>across-sensor pixel pitch [m]</p></div>
+</dd>
+<dt id="satcamsim.mtf.p_y"><code class="name">var <span class="ident">p_y</span></code></dt>
+<dd>
+<div class="desc"><p>pitch between TDI stages [m]</p></div>
+</dd>
+<dt id="satcamsim.mtf.p_y_eff"><code class="name">var <span class="ident">p_y_eff</span></code></dt>
+<dd>
+<div class="desc"><p>effective along-flight pixel pitch [m]</p></div>
+</dd>
+<dt id="satcamsim.mtf.sigma_jitter"><code class="name">var <span class="ident">sigma_jitter</span></code></dt>
+<dd>
+<div class="desc"><p>jitter standard deviation [m]</p></div>
+</dd>
+<dt id="satcamsim.mtf.t_int"><code class="name">var <span class="ident">t_int</span></code></dt>
+<dd>
+<div class="desc"><p>integration time [s]</p></div>
+</dd>
+<dt id="satcamsim.mtf.t_s"><code class="name">var <span class="ident">t_s</span></code></dt>
+<dd>
+<div class="desc"><p>sample time [s]</p></div>
+</dd>
+<dt id="satcamsim.mtf.theta"><code class="name">var <span class="ident">theta</span></code></dt>
+<dd>
+<div class="desc"><p>angle between direction of flight/orientation of TDI stages [rad]</p></div>
+</dd>
+<dt id="satcamsim.mtf.v_y"><code class="name">var <span class="ident">v_y</span></code></dt>
+<dd>
+<div class="desc"><p>avg in-flight velocity [m/s]</p></div>
+</dd>
+<dt id="satcamsim.mtf.w_px"><code class="name">var <span class="ident">w_px</span></code></dt>
+<dd>
+<div class="desc"><p>pixel size [m]</p></div>
+</dd>
+<dt id="satcamsim.mtf.z"><code class="name">var <span class="ident">z</span></code></dt>
+<dd>
+<div class="desc"><p>optical path length [km]</p></div>
+</dd>
+</dl>
 </section>
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
@@ -442,12 +552,17 @@ def trim_PSF(psf, size):
 </details>
 </dd>
 <dt id="satcamsim.mtf.get_PSF"><code class="name flex">
-<span>def <span class="ident">get_PSF</span></span>(<span>)</span>
+<span>def <span class="ident">get_PSF</span></span>(<span>wavelengths=[6.65e-07, 5.6e-07, 4.9e-07])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Computes MTF based on imaging chain approach, and Fourier-transforms it into PSF.
-Computations for RGB bands at 665, 560, and 490 nm.
-Note that parameters can only be adjusted directly in the mtf.py file for now.</p>
+Note that parameters (other than wavelength) can only be adjusted directly in the mtf.py file for now.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>wavelenths</code></strong> :&ensp;<code>list</code> of <code>float</code>, optional</dt>
+<dd>List of wavelengths (in meters) at which PSF will be computed.
+Defaults to RGB wavelengths at 665, 560, and 490 nm.</dd>
+</dl>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><strong><code>PSF</code></strong> :&ensp;<code>np.ndarray</code></dt>
@@ -457,11 +572,16 @@ Note that parameters can only be adjusted directly in the mtf.py file for now.</
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_PSF():
+<pre><code class="python">def get_PSF(wavelengths=[665e-9, 560e-9, 490e-9]):
     &#34;&#34;&#34;
     Computes MTF based on imaging chain approach, and Fourier-transforms it into PSF.
-    Computations for RGB bands at 665, 560, and 490 nm.
-    Note that parameters can only be adjusted directly in the mtf.py file for now.
+    Note that parameters (other than wavelength) can only be adjusted directly in the mtf.py file for now.
+    
+    Parameters
+    ----------
+    wavelenths : list of float, optional
+        List of wavelengths (in meters) at which PSF will be computed.
+        Defaults to RGB wavelengths at 665, 560, and 490 nm.
 
     Returns
     -------
@@ -469,8 +589,7 @@ Note that parameters can only be adjusted directly in the mtf.py file for now.</
         filter mask corresponding to PSF, sampled at pixel grid nodes.
 
     &#34;&#34;&#34;
-
-    n_samples = 250  # must be even!
+    n_samples = 250  #: must be even!
     f_max = 2 / w_px
 
     k_x = np.linspace(1, f_max, int(n_samples / 2))
@@ -480,8 +599,8 @@ Note that parameters can only be adjusted directly in the mtf.py file for now.</
     kk_x, kk_y = np.meshgrid(k_x, k_y)
 
     PSF_2Ds = []
-    lambdas = [665e-9, 560e-9, 490e-9]
-    for lbda in lambdas:
+    
+    for lbda in wavelengths:
         MTF_2D = MTF_sim(kk_x, kk_y, lbda)
         PSF_2Ds.append(np.fft.ifftshift(np.fft.ifft2(MTF_2D).real))
 
@@ -548,6 +667,34 @@ Note that parameters can only be adjusted directly in the mtf.py file for now.</
 <li><h3>Super-module</h3>
 <ul>
 <li><code><a title="satcamsim" href="index.html">satcamsim</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-variables">Global variables</a></h3>
+<ul class="two-column">
+<li><code><a title="satcamsim.mtf.Aa" href="#satcamsim.mtf.Aa">Aa</a></code></li>
+<li><code><a title="satcamsim.mtf.D" href="#satcamsim.mtf.D">D</a></code></li>
+<li><code><a title="satcamsim.mtf.D_obs" href="#satcamsim.mtf.D_obs">D_obs</a></code></li>
+<li><code><a title="satcamsim.mtf.F" href="#satcamsim.mtf.F">F</a></code></li>
+<li><code><a title="satcamsim.mtf.H" href="#satcamsim.mtf.H">H</a></code></li>
+<li><code><a title="satcamsim.mtf.N_TDI" href="#satcamsim.mtf.N_TDI">N_TDI</a></code></li>
+<li><code><a title="satcamsim.mtf.Sa" href="#satcamsim.mtf.Sa">Sa</a></code></li>
+<li><code><a title="satcamsim.mtf.W_RMS" href="#satcamsim.mtf.W_RMS">W_RMS</a></code></li>
+<li><code><a title="satcamsim.mtf.alpha" href="#satcamsim.mtf.alpha">alpha</a></code></li>
+<li><code><a title="satcamsim.mtf.d_vy" href="#satcamsim.mtf.d_vy">d_vy</a></code></li>
+<li><code><a title="satcamsim.mtf.f" href="#satcamsim.mtf.f">f</a></code></li>
+<li><code><a title="satcamsim.mtf.gsd_y" href="#satcamsim.mtf.gsd_y">gsd_y</a></code></li>
+<li><code><a title="satcamsim.mtf.l_depl" href="#satcamsim.mtf.l_depl">l_depl</a></code></li>
+<li><code><a title="satcamsim.mtf.l_diffusion" href="#satcamsim.mtf.l_diffusion">l_diffusion</a></code></li>
+<li><code><a title="satcamsim.mtf.p_x" href="#satcamsim.mtf.p_x">p_x</a></code></li>
+<li><code><a title="satcamsim.mtf.p_y" href="#satcamsim.mtf.p_y">p_y</a></code></li>
+<li><code><a title="satcamsim.mtf.p_y_eff" href="#satcamsim.mtf.p_y_eff">p_y_eff</a></code></li>
+<li><code><a title="satcamsim.mtf.sigma_jitter" href="#satcamsim.mtf.sigma_jitter">sigma_jitter</a></code></li>
+<li><code><a title="satcamsim.mtf.t_int" href="#satcamsim.mtf.t_int">t_int</a></code></li>
+<li><code><a title="satcamsim.mtf.t_s" href="#satcamsim.mtf.t_s">t_s</a></code></li>
+<li><code><a title="satcamsim.mtf.theta" href="#satcamsim.mtf.theta">theta</a></code></li>
+<li><code><a title="satcamsim.mtf.v_y" href="#satcamsim.mtf.v_y">v_y</a></code></li>
+<li><code><a title="satcamsim.mtf.w_px" href="#satcamsim.mtf.w_px">w_px</a></code></li>
+<li><code><a title="satcamsim.mtf.z" href="#satcamsim.mtf.z">z</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>

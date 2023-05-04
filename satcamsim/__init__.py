@@ -5,7 +5,7 @@ from .camera import Camera, Sensor, Interior_orientation, Cam_pose
 
 import satcamsim.configs as configs
 
-from .input_imgs import Feature_finder, Raster_processor, DOP_processor
+from .input_imgs import Feature_finder, Comp_processor, Input_processor
 
 from .orbit import get_pose_list, filter_poses
 
