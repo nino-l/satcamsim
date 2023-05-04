@@ -2,19 +2,13 @@
 import pyproj
 import csv
 import numpy as np
-from os import listdir
 
 import satcamsim.camera as camera
-from .input_imgs import DOP_processor
+from .input_imgs import Input_processor
 from .support import get_config
 
-# create coordinate reference systems and transformation between them
-crs_obj = pyproj.CRS("epsg:25832")          # XYZ object coordinates
-crs_ecef = pyproj.CRS("epsg:4936")          # ECEF
-ecef_to_obj = pyproj.transformer.Transformer.from_crs(crs_ecef, crs_obj)
 
-
-def get_pose_list(filename):
+def get_pose_list(filename, config=get_config()):
     """
     Compute all poses specified in a given orbit description.
 
@@ -22,6 +16,8 @@ def get_pose_list(filename):
     ----------
     filename : str
         path to .csv file containing the orbit information.
+    config : Config, optional
+        Config parameters. Defaults are used, if not provided.
 
     Returns
     -------
@@ -44,15 +40,23 @@ def get_pose_list(filename):
             all_rotations.append(rotation_rad)
 
     print('Reading orbit data from file complete.')
+    
+    crs_obj = config['CRS_IN']                  # XYZ object coordinates
+    crs_ecef = config['CRS_ORBIT']              # orbit coordinates
+    ecef_to_obj = pyproj.transformer.Transformer.from_crs(crs_ecef, crs_obj)
 
     # convert ECEF coordinates to object coordinates
     all_coords_obj = list(ecef_to_obj.itransform(all_coords_ECEF))
     all_coords_obj = [np.array(point) for point in all_coords_obj]
 
     print('Coordinate system conversion complete.')
+    
+    # transformer from object coordinates XYZ to lat/lon coordinates
+    lla = pyproj.CRS("epsg:4258")               # geographic coordinates
+    trans_obj_to_lla = pyproj.transformer.Transformer.from_crs(crs_obj, lla).transform
 
     # convert to camera.Cam_pose objects
-    pose_list = [camera.Cam_pose(idx, coords_obj, rotations) for idx, (coords_obj, rotations) in enumerate(zip(all_coords_obj, all_rotations))]
+    pose_list = [camera.Cam_pose(idx, coords_obj, rotations, trans_obj_to_lla) for idx, (coords_obj, rotations) in enumerate(zip(all_coords_obj, all_rotations))]
     for idx, pose in enumerate(pose_list):
         if idx == 0:
             continue
@@ -61,9 +65,9 @@ def get_pose_list(filename):
     return pose_list
 
 
-def filter_poses(pose_list, camera, config=get_config()):
+def filter_poses(pose_list, camera, granularity=10, config=get_config()):
     """
-    Filter poses such that only those showing parts of the DOP data are preserved.
+    Filter poses such that only those showing parts of the input data are preserved.
 
     Parameters
     ----------
@@ -71,32 +75,40 @@ def filter_poses(pose_list, camera, config=get_config()):
         list of poses to be filtered.
     camera : camera.Camera
         camera instance that will be used to simulate images. Must have sensors equipped.
+    granularity : int, optional
+        controls the precision of the filtering, must be even and >= 2.
+        For `granularity=n`, only every (10 * n)-th pixel in every n-th pose is checked for intersection with the input images.
+        The first and last pixels (sensor edges) of every n-th pose are always checked.
+        Higher values speed up filtering, but may lead to up to `granularity//2` relevant poses being missed near the edges of the input images.
+        The default is 10.
     config : Config, optional
         Config parameters. Defaults are used, if not provided.
 
     Returns
     -------
     used_poses : list[Cam_pose]
-        list containing poses relevant to the DOP data.
+        list containing poses relevant to the input data.
 
     """
+    if granularity % 2 or granularity < 2:
+        raise ValueError(f'granularity must be even and >= 2. Got {granularity}')
+    
     used_poses = []
 
-    filelist = listdir(config['DOP_FOLDER'])
-
-    with DOP_processor.from_config(config) as processor:
-        for idx, pose in list(enumerate(pose_list))[::10]:
+    with Input_processor.from_config(config) as processor:
+        
+        for idx, pose in list(enumerate(pose_list))[::granularity]:      # check every n-th pose
             camera.set_pose(pose)
+            
             for sensor in camera.sensors:
-                imgcoords = sensor.px_corners_xy[:, ::int(sensor.pixels / 10)]
+                imgcoords = sensor.px_corners_xy[:, ::(10 * granularity)]   # check every (10*n)-th pixel
                 imgcoords = np.append(imgcoords, sensor.px_corners_xy[:, -1:], axis=1)
                 objcoords = sensor.get_object_coordinates(imgcoords)
                 num_points = objcoords.shape[1]
                 for point in range(num_points):
-                    file = processor.get_filenames(objcoords[:, point])
-                    if file not in filelist:
+                    if not processor.get_filenames(objcoords[:, point]):    # corresponding input image could not be found
                         continue
-                    used_poses += pose_list[idx - 5:idx + 5]
+                    used_poses += pose_list[idx - granularity // 2:idx + granularity // 2]  # append previous (n//2) and next (n//2) poses
                     break
 
     print('Filtering orbit complete.')

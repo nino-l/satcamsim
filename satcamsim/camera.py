@@ -10,7 +10,7 @@ from shapely.ops import unary_union
 from concurrent.futures import ThreadPoolExecutor
 import multiprocessing as mp
 
-from .input_imgs import DOP_processor, Feature_finder
+from .input_imgs import Input_processor, Feature_finder
 from .save_output import Temp_handler
 from .support import get_config, rotation_x, rotation_y, rotation_z
 from .sim_modes import Sim_modes
@@ -56,7 +56,7 @@ class Camera:
         Parameters
         ----------
         pose : Cam_pose
-            pose of the camera
+            pose of the camera.
 
         Returns
         -------
@@ -68,14 +68,14 @@ class Camera:
             sensor.pose = self.pose
         return self
 
-    def take_line_img(self, dop_processor, active_sensors=None, out_array=None, config=get_config(), feat_finder=None):
+    def take_line_img(self, input_processor, active_sensors=None, out_array=None, config=get_config(), feat_finder=None):
         """
         Acquire a single line image from the current pose using the specified sensors.
 
         Parameters
         ----------
-        dop_processor : DOP_processor
-            DOP_processor instance used to read data from DOP.
+        input_processor : Input_processor
+            Input_processor instance used to read data from input images.
         active_sensors : list of Sensor, optional
             Sensor objects to be used for the image. If not given, all sensors
             are used.
@@ -111,7 +111,7 @@ class Camera:
 
         for sensor_idx, sensor in enumerate(active_sensors):
             # take line images with all specified sensors
-            img_out[sensor_idx, :, :], new_coverage, new_feats = sensor.take_line_img(dop_processor, config, feat_finder)
+            img_out[sensor_idx, :, :], new_coverage, new_feats = sensor.take_line_img(input_processor, config, feat_finder)
 
             # add ground covered in new line image
             coverage_geoms.append(new_coverage)
@@ -159,17 +159,17 @@ class Camera:
                 num_pixels = max([sensor.pixels for sensor in active_sensors])       # width if output image
 
                 # create array containing output images for all sensors and bands
-                img_out = np.full((len(active_sensors), num_bands, num_lines, num_pixels), np.NaN, np.uint8)
+                img_out = np.full((len(active_sensors), num_bands, num_lines, num_pixels), config['NODATA_OUT'], config['DTYPE_OUT'])
             else:
                 img_out = out_array
 
             coverage_geoms = list()
             found_feats = list()
 
-            with DOP_processor.from_config(config) as dop_processor:
+            with Input_processor.from_config(config) as input_processor:
                 for pose_idx, pose in enumerate(pose_list):
                     # update pose and take new line image; write directly to output array
-                    _, new_coverage, new_feats = self.set_pose(pose).take_line_img(dop_processor, active_sensors, out_array=img_out[:, :, pose_idx, :], config=config, feat_finder=feat_finder)
+                    _, new_coverage, new_feats = self.set_pose(pose).take_line_img(input_processor, active_sensors, out_array=img_out[:, :, pose_idx, :], config=config, feat_finder=feat_finder)
                     coverage_geoms.append(new_coverage)
                     found_feats += new_feats
 
@@ -230,7 +230,7 @@ class Camera:
 
         if out_array is None:
             # create array containing output images for all sensors and bands
-            img_out = np.full((len(active_sensors), num_bands, num_lines, num_pixels), np.NaN, np.uint8)
+            img_out = np.full((len(active_sensors), num_bands, num_lines, num_pixels), config['NODATA_OUT'], config['DTYPE_OUT'])
         else:
             img_out = out_array
 
@@ -282,7 +282,7 @@ class Camera:
             num_pixels = max([sensor.pixels for sensor in active_sensors])       # width if output image
 
             # create array containing output images for all sensors and bands
-            img_out = np.full((len(active_sensors), num_bands, num_lines, num_pixels), np.NaN, np.uint8)
+            img_out = np.full((len(active_sensors), num_bands, num_lines, num_pixels), config['NODATA_OUT'], config['DTYPE_OUT'])
         else:
             img_out = out_array
 
@@ -356,7 +356,7 @@ class Camera:
 
         if out_array is None:
             # create array containing output images for all sensors and bands
-            img_out = np.full((len(active_sensors), num_bands, num_lines, num_pixels), np.NaN, np.uint8)
+            img_out = np.full((len(active_sensors), num_bands, num_lines, num_pixels), config['NODATA_OUT'], config['DTYPE_OUT'])
         else:
             img_out = out_array
 
@@ -526,10 +526,10 @@ class Camera:
                     sigma = np.mean(img_raw[sensor_idx, band_idx, :, :][np.where(img_raw[sensor_idx, band_idx, :, :])]) / SNR[sensor_idx, band_idx]
                     noise[sensor_idx, band_idx, :, :] = np.random.normal(0, sigma, img_raw[sensor_idx, band_idx, :, :].shape)   # independent noise for each band
 
-            img_out = np.clip((img_out.astype(float) + noise), 0, 255).astype(np.uint8)
+            img_out = np.clip((img_out.astype(float) + noise), np.iinfo(config['DTYPE_OUT']).min, np.iinfo(config['DTYPE_OUT']).max).astype(config['DTYPE_OUT'])
 
         # preserve nodata entries
-        img_out = np.where(img_raw, img_out, 0)
+        img_out = np.where(img_raw==config['NODATA_OUT'], config['NODATA_OUT'], img_out)
         return img_out
 
 
@@ -654,14 +654,14 @@ class Sensor:
             (pose.R[1, 0] * delta_x + pose.R[1, 1] * delta_y - pose.R[1, 2] * self.interior_orientation.c)
         return np.stack([X, Y])
 
-    def take_line_img(self, dop_processor, config=get_config(), feat_finder=None):
+    def take_line_img(self, input_processor, config=get_config(), feat_finder=None):
         """
         Acquire a single line image from current camera pose.
 
         Parameters
         ----------
-        dop_processor : DOP_processor
-            DOP_processor instance used to read data from DOP.
+        input_processor : Input_processor
+            Input_processor instance used to read data from input images.
         config : Config, optional
             Dict of config parameters. If not given, default parameters are used.
         feat_finder : Feature_finder, optional
@@ -677,7 +677,7 @@ class Sensor:
              list of found GCPs.
 
         """
-        img_out = np.zeros((len(self.bands), self.pixels), np.uint8)
+        img_out = np.full((len(self.bands), self.pixels), config['NODATA_OUT'], config['DTYPE_OUT'])
         coverage_list = list()
         found_feats = list()
 
@@ -694,7 +694,7 @@ class Sensor:
                                 tuple(self.prev_corners_XY[:, pixel + 1]),
                                 tuple(new_corners_XY[:, pixel + 1])]
 
-            is_success, sample, new_coverage = dop_processor.sample_area(pixel_corners_XY, self.bands)
+            is_success, sample, new_coverage = input_processor.sample_area(pixel_corners_XY, self.bands)
 
             if feat_finder:
                 found_feats += feat_finder.check(new_coverage, pixel_corners_XY, self.pose.idx, pixel, self.name, self.pose)
@@ -703,10 +703,10 @@ class Sensor:
             coverage_list.append(new_coverage)
 
             if not is_success:
-                img_out[:, pixel] = 0   # write 0 (no data) to output image
+                img_out[:, pixel] = config['NODATA_OUT']   # write no data to output image
                 continue
 
-            # take mean value of all contained DOP raster points (for each band) and write to output image
+            # take mean value of all contained input raster points (for each band) and write to output image
             img_out[:, pixel] = sample
 
         self.prev_pose = self.pose              # update previous pose
@@ -754,6 +754,9 @@ class Cam_pose:
         position of camera in object coordinates in (X0, Y0, Z0) format.
     attitude : tuple of float
         (alpha_y, alpha_x, alpha_z) angles from nominal orbit definition, in rad.
+    trans_obj_to_lla: callable
+        transformation from object coordinates (input image CRS) to geographic coordinates (latitude, longitude, altitude).
+        Must have the function signature of a `pyproj.Transformer`'s `transform` method.
     deviate_angles: tuple of float, optional
         deviatory rotation angles from nominal orbit in (yaw, pitch, roll) format. Defaults to (0, 0, 0).
 
@@ -763,22 +766,18 @@ class Cam_pose:
         a new Cam_pose instance.
 
     """
-    # transformer from EPSG:25832 XYZ to ETRS89 lat/lon coordinates
-    crs_obj = pyproj.CRS("epsg:25832")          # XYZ object coordinates
-    lla = pyproj.CRS("epsg:4258")               # ETRS89 with GRS1980 ellipsoid
-    obj_to_lla = pyproj.transformer.Transformer.from_crs(crs_obj, lla)
 
     # rotation matrix from xyz image to satellite vehicle coordinate axes
     R_img2sat = np.array([[0, 1, 0], [1, 0, 0], [0, 0, -1]])
 
-    def __init__(self, idx, coords_obj, attitude, deviate_angles=None):
+    def __init__(self, idx, coords_obj, attitude, trans_obj_to_lla, deviate_angles=None):
         self.idx = idx
         self.XYZ_0 = np.array(coords_obj)
         self.previous = None
         alpha_y, alpha_x, alpha_z = attitude
 
         # rotation matrix from ECEF to EPSG:25832 object coordinates
-        lat, lon, _ = Cam_pose.obj_to_lla.transform(self.XYZ_0[0], self.XYZ_0[1], self.XYZ_0[2], radians=True)
+        lat, lon, _ = trans_obj_to_lla(self.XYZ_0[0], self.XYZ_0[1], self.XYZ_0[2], radians=True)
         R_ecef2obj = np.array([[-np.sin(lon), np.cos(lon), 0],
                                [-np.sin(lat) * np.cos(lon), -np.sin(lat) * np.sin(lon), np.cos(lat)],
                                [np.cos(lat) * np.cos(lon), np.cos(lat) * np.sin(lon), np.sin(lat)]])
