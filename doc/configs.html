@@ -29,12 +29,14 @@
 </summary>
 <pre><code class="python">&#34;&#34;&#34;Provides default config parameters for different parts of the simulator. To change the defaults, edit this file directly.&#34;&#34;&#34;
 from .sim_modes import Sim_modes
+import pyproj
 
 NUM_THREADS = 1         #: number of threads, if multithreading (Sim_modes.THREADS) is used
 NUM_PROCESSES = 12       #: number of processes, if multiprocessing (Sim_modes.PROCESSES) is used
 CHUNK_SIZE = 2**16 * 3  #: size of partial images stored in temp files in pixels, if Sim_modes.CHUNKS is used
 
-#: tuple of `sim_modes.Sim_modes`. Control order of and toggle multiprocessing, multithreading, creation of temp files. must end with Sim_modes.DEFAULT
+#: tuple of `sim_modes.Sim_modes`. Control order of and toggle multiprocessing, multithreading, creation of temp files. Must ALWAYS end with Sim_modes.DEFAULT.
+#: Modes are evaluated in order and recursively, i.e. `(Sim_modes.PROCESSES, Sim_modes.THREADS, Sim_modes.DEFAULT)` will spawn `NUM_PROCESSES` sub-processes, which will start `NUM_THREADS` threads EACH (for a total of `NUM_PROCESSES * NUM_THREADS` threads).
 SIM_MODES = (Sim_modes.PROCESSES,
              Sim_modes.DEFAULT,)
 
@@ -51,47 +53,26 @@ APPROX_VIEW_ANGLE = 2.22    #: approximate angle of view of the camera. used onl
 #: Lower angle speeds up 3D GCP localization, but if higher roll angles occur, GCPs may be missed.
 MAX_ROLL_ANGLE = 1
 
+FOLDER_IN = &#39;path/to/input/folder/&#39;  #: path to folder containing input images.
+CRS_IN = pyproj.CRS(&#39;epsg:32632&#39;)   #: CRS of input image files and GCPs. Must be a pyproj CRS object. Also referred to as object coordinates
+FILEEXTENSION_IN = &#39;.tif&#39;           #: file extension of input images. Files with other extensions in the input image folder will be ignored.
+NODATA_IN = 255                       #: nodata value of input images
+MAX_OPEN_FILES = 23                 #: max number of input files allowed to be opened at the same time
 
-def dop40_filename(X_B, Y_B):
-    &#34;&#34;&#34;
-    Generate filenames for DOP with 40cm GSD.
+CRS_ORBIT = pyproj.CRS(&#34;epsg:4936&#34;) #: CRS of orbit specification. Must be a pyproj CRS object. Only ECEF coordinates (EPSG:4936) are reliably supported by the current implementation of `camera.Cam_pose`
 
-    Parameters
-    ----------
-    X_B : int
-        X coordinate of SE tile corner.
-    Y_B : int
-        Y coordinate of SE tile corner.
-
-    Returns
-    -------
-    filename : str
-        Filename of the DOP tile with SE corner (X_B, Y_B).
-
-    &#34;&#34;&#34;
-    return f&#39;32{int(X_B/1000)}_{int(Y_B/1000)}.tif&#39;
-
-
-DOP_FOLDER = &#39;path/to/DOP/folder/&#39;  #: path to folder containing DOP images.
-FILENAME_FORMAT = dop40_filename  #: callable returning a valid filename string for arguments X_B, Y_B. Set to `dop20_filename` for Zugspitze, `dop40_filename` for Ansbach
-GSD_DOP = 0.4                     #: GSD of used DOP file
-
-COUNT_R = 2500          #: height of DOP tile in pixels
-COUNT_C = 2500          #: width of DOP tile in pixels
-MAX_OPEN_FILES = 23     #: max number of DOP files open at the same time
-
+NODATA_OUT = 0          #: nodata value used in output image (must be a valid value for `DTYPE_OUT`)
+DTYPE_OUT = &#39;uint8&#39;    #: dtype of output image, must be a numpy-compatible type and be compatible with input image values (to prevent overflow etc.)
 NOISY = True            #: toggle noise in degraded image
 
 FIND_FEATURES = True    #: toggle localization of GCPs
-FEATURE_CSV_PATH_2D = &#39;path/to/csv/with/2D/GCPs.csv&#39;  #: path to .csv with 2D GCPs. File format specified in `input_imgs.Feature_finder`.
-FEATURE_CSV_PATH_3D = &#39;path/to/csv/with/3D/GCPs.csv&#39;  #: path to .csv with 3D GCPs. File format specified in `input_imgs.Feature_finder`.
-
+FEATURE_CSV_PATH_2D = &#39;path/to/csv/with/2D/GCPs.csv&#39;  #: None or path to .csv with 2D GCPs (containing only X/Y coordinates). File format specified in `input_imgs.Feature_finder`.
+FEATURE_CSV_PATH_3D = &#39;path/to/csv/with/3D/GCPs.csv&#39;  #: None or path to .csv with 3D GCPs (containing X/Y/Z coordinates). File format specified in `input_imgs.Feature_finder`.
 
 COMPARE_FOLDER = &#39;path/to/raster/data/for/comparisons/&#39;  #: path to folder containing raster data for comparison.
-GSD_COMP = 3              #: ground sampling distance of comparison data, in meters
 COMP_FILES = None         #: list of filenames for comparison data, or None to use all files in the `COMPARE_FOLDER`
-GLUE_MULTIPOLYS = True      #: try to close small gaps in the ground coverage by dilating it up to MAX_DIST_GLUE
-MAX_ITER_GLUE = 30
+GLUE_MULTIPOLYS = True      #: try to close small gaps in the ground coverage by dilating it up to `MAX_DIST_GLUE`
+MAX_ITER_GLUE = 30          #: defines step size in closing gaps as `MAX_DIST_GLUE / MAX_ITER_GLUE`. Large values mean less unnecessary dilation, low values mean faster processing.
 MAX_DIST_GLUE = .5          #: maximum dilation of ground track coverage in meters</code></pre>
 </details>
 </section>
@@ -116,49 +97,53 @@ MAX_DIST_GLUE = .5          #: maximum dilation of ground track coverage in mete
 <dd>
 <div class="desc"><p>list of filenames for comparison data, or None to use all files in the <code><a title="satcamsim.configs.COMPARE_FOLDER" href="#satcamsim.configs.COMPARE_FOLDER">COMPARE_FOLDER</a></code></p></div>
 </dd>
-<dt id="satcamsim.configs.COUNT_C"><code class="name">var <span class="ident">COUNT_C</span></code></dt>
+<dt id="satcamsim.configs.CRS_IN"><code class="name">var <span class="ident">CRS_IN</span></code></dt>
 <dd>
-<div class="desc"><p>width of DOP tile in pixels</p></div>
+<div class="desc"><p>CRS of input image files and GCPs. Must be a pyproj CRS object. Also referred to as object coordinates</p></div>
 </dd>
-<dt id="satcamsim.configs.COUNT_R"><code class="name">var <span class="ident">COUNT_R</span></code></dt>
+<dt id="satcamsim.configs.CRS_ORBIT"><code class="name">var <span class="ident">CRS_ORBIT</span></code></dt>
 <dd>
-<div class="desc"><p>height of DOP tile in pixels</p></div>
+<div class="desc"><p>CRS of orbit specification. Must be a pyproj CRS object. Only ECEF coordinates (EPSG:4936) are reliably supported by the current implementation of <code>camera.Cam_pose</code></p></div>
 </dd>
-<dt id="satcamsim.configs.DOP_FOLDER"><code class="name">var <span class="ident">DOP_FOLDER</span></code></dt>
+<dt id="satcamsim.configs.DTYPE_OUT"><code class="name">var <span class="ident">DTYPE_OUT</span></code></dt>
 <dd>
-<div class="desc"><p>path to folder containing DOP images.</p></div>
+<div class="desc"><p>dtype of output image, must be a numpy-compatible type and be compatible with input image values (to prevent overflow etc.)</p></div>
 </dd>
 <dt id="satcamsim.configs.FEATURE_CSV_PATH_2D"><code class="name">var <span class="ident">FEATURE_CSV_PATH_2D</span></code></dt>
 <dd>
-<div class="desc"><p>path to .csv with 2D GCPs. File format specified in <code>input_imgs.Feature_finder</code>.</p></div>
+<div class="desc"><p>None or path to .csv with 2D GCPs (containing only X/Y coordinates). File format specified in <code>input_imgs.Feature_finder</code>.</p></div>
 </dd>
 <dt id="satcamsim.configs.FEATURE_CSV_PATH_3D"><code class="name">var <span class="ident">FEATURE_CSV_PATH_3D</span></code></dt>
 <dd>
-<div class="desc"><p>path to .csv with 3D GCPs. File format specified in <code>input_imgs.Feature_finder</code>.</p></div>
+<div class="desc"><p>None or path to .csv with 3D GCPs (containing X/Y/Z coordinates). File format specified in <code>input_imgs.Feature_finder</code>.</p></div>
+</dd>
+<dt id="satcamsim.configs.FILEEXTENSION_IN"><code class="name">var <span class="ident">FILEEXTENSION_IN</span></code></dt>
+<dd>
+<div class="desc"><p>file extension of input images. Files with other extensions in the input image folder will be ignored.</p></div>
 </dd>
 <dt id="satcamsim.configs.FIND_FEATURES"><code class="name">var <span class="ident">FIND_FEATURES</span></code></dt>
 <dd>
 <div class="desc"><p>toggle localization of GCPs</p></div>
 </dd>
+<dt id="satcamsim.configs.FOLDER_IN"><code class="name">var <span class="ident">FOLDER_IN</span></code></dt>
+<dd>
+<div class="desc"><p>path to folder containing input images.</p></div>
+</dd>
 <dt id="satcamsim.configs.GLUE_MULTIPOLYS"><code class="name">var <span class="ident">GLUE_MULTIPOLYS</span></code></dt>
 <dd>
-<div class="desc"><p>try to close small gaps in the ground coverage by dilating it up to MAX_DIST_GLUE</p></div>
-</dd>
-<dt id="satcamsim.configs.GSD_COMP"><code class="name">var <span class="ident">GSD_COMP</span></code></dt>
-<dd>
-<div class="desc"><p>ground sampling distance of comparison data, in meters</p></div>
-</dd>
-<dt id="satcamsim.configs.GSD_DOP"><code class="name">var <span class="ident">GSD_DOP</span></code></dt>
-<dd>
-<div class="desc"><p>GSD of used DOP file</p></div>
+<div class="desc"><p>try to close small gaps in the ground coverage by dilating it up to <code><a title="satcamsim.configs.MAX_DIST_GLUE" href="#satcamsim.configs.MAX_DIST_GLUE">MAX_DIST_GLUE</a></code></p></div>
 </dd>
 <dt id="satcamsim.configs.MAX_DIST_GLUE"><code class="name">var <span class="ident">MAX_DIST_GLUE</span></code></dt>
 <dd>
 <div class="desc"><p>maximum dilation of ground track coverage in meters</p></div>
 </dd>
+<dt id="satcamsim.configs.MAX_ITER_GLUE"><code class="name">var <span class="ident">MAX_ITER_GLUE</span></code></dt>
+<dd>
+<div class="desc"><p>defines step size in closing gaps as <code>MAX_DIST_GLUE / MAX_ITER_GLUE</code>. Large values mean less unnecessary dilation, low values mean faster processing.</p></div>
+</dd>
 <dt id="satcamsim.configs.MAX_OPEN_FILES"><code class="name">var <span class="ident">MAX_OPEN_FILES</span></code></dt>
 <dd>
-<div class="desc"><p>max number of DOP files open at the same time</p></div>
+<div class="desc"><p>max number of input files allowed to be opened at the same time</p></div>
 </dd>
 <dt id="satcamsim.configs.MAX_ROLL_ANGLE"><code class="name">var <span class="ident">MAX_ROLL_ANGLE</span></code></dt>
 <dd>
@@ -168,6 +153,14 @@ Lower angle speeds up 3D GCP localization, but if higher roll angles occur, GCPs
 <dt id="satcamsim.configs.MEAN_TERRAIN_HEIGHT"><code class="name">var <span class="ident">MEAN_TERRAIN_HEIGHT</span></code></dt>
 <dd>
 <div class="desc"><p>Z_terrain for simulating images and finding GCPs</p></div>
+</dd>
+<dt id="satcamsim.configs.NODATA_IN"><code class="name">var <span class="ident">NODATA_IN</span></code></dt>
+<dd>
+<div class="desc"><p>nodata value of input images</p></div>
+</dd>
+<dt id="satcamsim.configs.NODATA_OUT"><code class="name">var <span class="ident">NODATA_OUT</span></code></dt>
+<dd>
+<div class="desc"><p>nodata value used in output image (must be a valid value for <code><a title="satcamsim.configs.DTYPE_OUT" href="#satcamsim.configs.DTYPE_OUT">DTYPE_OUT</a></code>)</p></div>
 </dd>
 <dt id="satcamsim.configs.NOISY"><code class="name">var <span class="ident">NOISY</span></code></dt>
 <dd>
@@ -187,7 +180,8 @@ Lower angle speeds up 3D GCP localization, but if higher roll angles occur, GCPs
 </dd>
 <dt id="satcamsim.configs.SIM_MODES"><code class="name">var <span class="ident">SIM_MODES</span></code></dt>
 <dd>
-<div class="desc"><p>tuple of <code>sim_modes.Sim_modes</code>. Control order of and toggle multiprocessing, multithreading, creation of temp files. must end with Sim_modes.DEFAULT</p></div>
+<div class="desc"><p>tuple of <code>sim_modes.Sim_modes</code>. Control order of and toggle multiprocessing, multithreading, creation of temp files. Must ALWAYS end with Sim_modes.DEFAULT.
+Modes are evaluated in order and recursively, i.e. <code>(Sim_modes.PROCESSES, Sim_modes.THREADS, Sim_modes.DEFAULT)</code> will spawn <code><a title="satcamsim.configs.NUM_PROCESSES" href="#satcamsim.configs.NUM_PROCESSES">NUM_PROCESSES</a></code> sub-processes, which will start <code><a title="satcamsim.configs.NUM_THREADS" href="#satcamsim.configs.NUM_THREADS">NUM_THREADS</a></code> threads EACH (for a total of <code>NUM_PROCESSES * NUM_THREADS</code> threads).</p></div>
 </dd>
 <dt id="satcamsim.configs.TEMP_FOLDER"><code class="name">var <span class="ident">TEMP_FOLDER</span></code></dt>
 <dd>
@@ -196,91 +190,6 @@ Lower angle speeds up 3D GCP localization, but if higher roll angles occur, GCPs
 </dl>
 </section>
 <section>
-<h2 class="section-title" id="header-functions">Functions</h2>
-<dl>
-<dt id="satcamsim.configs.FILENAME_FORMAT"><code class="name flex">
-<span>def <span class="ident">FILENAME_FORMAT</span></span>(<span>X_B, Y_B)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Generate filenames for DOP with 40cm GSD.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>X_B</code></strong> :&ensp;<code>int</code></dt>
-<dd>X coordinate of SE tile corner.</dd>
-<dt><strong><code>Y_B</code></strong> :&ensp;<code>int</code></dt>
-<dd>Y coordinate of SE tile corner.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>filename</code></strong> :&ensp;<code>str</code></dt>
-<dd>Filename of the DOP tile with SE corner (X_B, Y_B).</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def dop40_filename(X_B, Y_B):
-    &#34;&#34;&#34;
-    Generate filenames for DOP with 40cm GSD.
-
-    Parameters
-    ----------
-    X_B : int
-        X coordinate of SE tile corner.
-    Y_B : int
-        Y coordinate of SE tile corner.
-
-    Returns
-    -------
-    filename : str
-        Filename of the DOP tile with SE corner (X_B, Y_B).
-
-    &#34;&#34;&#34;
-    return f&#39;32{int(X_B/1000)}_{int(Y_B/1000)}.tif&#39;</code></pre>
-</details>
-</dd>
-<dt id="satcamsim.configs.dop40_filename"><code class="name flex">
-<span>def <span class="ident">dop40_filename</span></span>(<span>X_B, Y_B)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Generate filenames for DOP with 40cm GSD.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>X_B</code></strong> :&ensp;<code>int</code></dt>
-<dd>X coordinate of SE tile corner.</dd>
-<dt><strong><code>Y_B</code></strong> :&ensp;<code>int</code></dt>
-<dd>Y coordinate of SE tile corner.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>filename</code></strong> :&ensp;<code>str</code></dt>
-<dd>Filename of the DOP tile with SE corner (X_B, Y_B).</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def dop40_filename(X_B, Y_B):
-    &#34;&#34;&#34;
-    Generate filenames for DOP with 40cm GSD.
-
-    Parameters
-    ----------
-    X_B : int
-        X coordinate of SE tile corner.
-    Y_B : int
-        Y coordinate of SE tile corner.
-
-    Returns
-    -------
-    filename : str
-        Filename of the DOP tile with SE corner (X_B, Y_B).
-
-    &#34;&#34;&#34;
-    return f&#39;32{int(X_B/1000)}_{int(Y_B/1000)}.tif&#39;</code></pre>
-</details>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -302,31 +211,28 @@ Lower angle speeds up 3D GCP localization, but if higher roll angles occur, GCPs
 <li><code><a title="satcamsim.configs.CHUNK_SIZE" href="#satcamsim.configs.CHUNK_SIZE">CHUNK_SIZE</a></code></li>
 <li><code><a title="satcamsim.configs.COMPARE_FOLDER" href="#satcamsim.configs.COMPARE_FOLDER">COMPARE_FOLDER</a></code></li>
 <li><code><a title="satcamsim.configs.COMP_FILES" href="#satcamsim.configs.COMP_FILES">COMP_FILES</a></code></li>
-<li><code><a title="satcamsim.configs.COUNT_C" href="#satcamsim.configs.COUNT_C">COUNT_C</a></code></li>
-<li><code><a title="satcamsim.configs.COUNT_R" href="#satcamsim.configs.COUNT_R">COUNT_R</a></code></li>
-<li><code><a title="satcamsim.configs.DOP_FOLDER" href="#satcamsim.configs.DOP_FOLDER">DOP_FOLDER</a></code></li>
+<li><code><a title="satcamsim.configs.CRS_IN" href="#satcamsim.configs.CRS_IN">CRS_IN</a></code></li>
+<li><code><a title="satcamsim.configs.CRS_ORBIT" href="#satcamsim.configs.CRS_ORBIT">CRS_ORBIT</a></code></li>
+<li><code><a title="satcamsim.configs.DTYPE_OUT" href="#satcamsim.configs.DTYPE_OUT">DTYPE_OUT</a></code></li>
 <li><code><a title="satcamsim.configs.FEATURE_CSV_PATH_2D" href="#satcamsim.configs.FEATURE_CSV_PATH_2D">FEATURE_CSV_PATH_2D</a></code></li>
 <li><code><a title="satcamsim.configs.FEATURE_CSV_PATH_3D" href="#satcamsim.configs.FEATURE_CSV_PATH_3D">FEATURE_CSV_PATH_3D</a></code></li>
+<li><code><a title="satcamsim.configs.FILEEXTENSION_IN" href="#satcamsim.configs.FILEEXTENSION_IN">FILEEXTENSION_IN</a></code></li>
 <li><code><a title="satcamsim.configs.FIND_FEATURES" href="#satcamsim.configs.FIND_FEATURES">FIND_FEATURES</a></code></li>
+<li><code><a title="satcamsim.configs.FOLDER_IN" href="#satcamsim.configs.FOLDER_IN">FOLDER_IN</a></code></li>
 <li><code><a title="satcamsim.configs.GLUE_MULTIPOLYS" href="#satcamsim.configs.GLUE_MULTIPOLYS">GLUE_MULTIPOLYS</a></code></li>
-<li><code><a title="satcamsim.configs.GSD_COMP" href="#satcamsim.configs.GSD_COMP">GSD_COMP</a></code></li>
-<li><code><a title="satcamsim.configs.GSD_DOP" href="#satcamsim.configs.GSD_DOP">GSD_DOP</a></code></li>
 <li><code><a title="satcamsim.configs.MAX_DIST_GLUE" href="#satcamsim.configs.MAX_DIST_GLUE">MAX_DIST_GLUE</a></code></li>
+<li><code><a title="satcamsim.configs.MAX_ITER_GLUE" href="#satcamsim.configs.MAX_ITER_GLUE">MAX_ITER_GLUE</a></code></li>
 <li><code><a title="satcamsim.configs.MAX_OPEN_FILES" href="#satcamsim.configs.MAX_OPEN_FILES">MAX_OPEN_FILES</a></code></li>
 <li><code><a title="satcamsim.configs.MAX_ROLL_ANGLE" href="#satcamsim.configs.MAX_ROLL_ANGLE">MAX_ROLL_ANGLE</a></code></li>
 <li><code><a title="satcamsim.configs.MEAN_TERRAIN_HEIGHT" href="#satcamsim.configs.MEAN_TERRAIN_HEIGHT">MEAN_TERRAIN_HEIGHT</a></code></li>
+<li><code><a title="satcamsim.configs.NODATA_IN" href="#satcamsim.configs.NODATA_IN">NODATA_IN</a></code></li>
+<li><code><a title="satcamsim.configs.NODATA_OUT" href="#satcamsim.configs.NODATA_OUT">NODATA_OUT</a></code></li>
 <li><code><a title="satcamsim.configs.NOISY" href="#satcamsim.configs.NOISY">NOISY</a></code></li>
 <li><code><a title="satcamsim.configs.NUM_PROCESSES" href="#satcamsim.configs.NUM_PROCESSES">NUM_PROCESSES</a></code></li>
 <li><code><a title="satcamsim.configs.NUM_THREADS" href="#satcamsim.configs.NUM_THREADS">NUM_THREADS</a></code></li>
 <li><code><a title="satcamsim.configs.OUTPUT_FOLDER" href="#satcamsim.configs.OUTPUT_FOLDER">OUTPUT_FOLDER</a></code></li>
 <li><code><a title="satcamsim.configs.SIM_MODES" href="#satcamsim.configs.SIM_MODES">SIM_MODES</a></code></li>
 <li><code><a title="satcamsim.configs.TEMP_FOLDER" href="#satcamsim.configs.TEMP_FOLDER">TEMP_FOLDER</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-functions">Functions</a></h3>
-<ul class="">
-<li><code><a title="satcamsim.configs.FILENAME_FORMAT" href="#satcamsim.configs.FILENAME_FORMAT">FILENAME_FORMAT</a></code></li>
-<li><code><a title="satcamsim.configs.dop40_filename" href="#satcamsim.configs.dop40_filename">dop40_filename</a></code></li>
 </ul>
 </li>
 </ul>

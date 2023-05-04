@@ -34,8 +34,9 @@ from shutil import rmtree
 from uuid import uuid4
 import pickle
 import time
-from PIL import Image
+import tifffile
 from csv import writer
+from traceback import print_exception
 
 
 class FolderExistsError(FileExistsError):
@@ -274,8 +275,13 @@ class Output_saver:
         -------
         None.
         &#34;&#34;&#34;
-        with open(self.logfile, &#39;a&#39;) as log:
-            log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: exiting output saver\n&#39;)
+        if exc_type is not None:
+            with open(self.logfile, &#39;a&#39;) as log:
+                log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: exiting output saver with exception:\n&#39;)
+                print_exception(exc_type, exc_value, traceback, file=log)
+        else:
+            with open(self.logfile, &#39;a&#39;) as log:
+                log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: exiting output saver\n&#39;)
         return
 
     def save_imgs(self, imgs):
@@ -340,24 +346,17 @@ class Output_saver:
             self.save_img(img[None, :, :])
 
         elif img.ndim == 3:
-            if img.shape[0] in (1, 3, 4):
-                if not filename:
-                    filename = str(self.file_counter) + &#34;.tif&#34;
-                with open(self.logfile, &#39;a&#39;) as log:
-                    log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: start saving &#39; + subfolder + filename + &#39;\n&#39;)
-                im = Image.fromarray(img.swapaxes(0, 2).swapaxes(0, 1))
-                im.save(self.out_folder + subfolder + filename)
-                self.file_counter += 1
-                with open(self.logfile, &#39;a&#39;) as log:
-                    log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: finished saving &#39; + subfolder + filename + &#39;\n&#39;)
-            else:
-                with open(self.logfile, &#39;a&#39;) as log:
-                    log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: array with no. of channels other than 1, 3, or 4 will be stored as individual images\n&#39;)
-                try:
-                    os.mkdir(self.out_folder + str(self.file_counter) + &#39;\\&#39;)
-                except FileExistsError:
-                    raise FolderExistsError(&#39;folder already exists: &#39; + self.out_folder + str(self.file_counter) + &#39;\\&#39;)
-                [self.save_img(img[None, i, :, :], subfolder=str(self.file_counter) + &#39;\\&#39;, filename=str(i)) for i in range(img.shape[0])]
+
+            if not filename:
+                filename = str(self.file_counter) + &#34;.tif&#34;
+            with open(self.logfile, &#39;a&#39;) as log:
+                log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: start saving &#39; + subfolder + filename + &#39;\n&#39;)
+                
+            tifffile.imwrite(self.out_folder + subfolder + filename, img, dtype=img.dtype)
+            
+            self.file_counter += 1
+            with open(self.logfile, &#39;a&#39;) as log:
+                log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: finished saving &#39; + subfolder + filename + &#39;\n&#39;)
 
         else:
             with open(self.logfile, &#39;a&#39;) as log:
@@ -414,7 +413,7 @@ class Output_saver:
 
     def save(self, obj, filename=None):
         &#34;&#34;&#34;
-        Save arbitrary objects.
+        Save arbitrary (pickleable) objects.
 
         Parameters
         ----------
@@ -560,8 +559,13 @@ class Output_saver:
         -------
         None.
         &#34;&#34;&#34;
-        with open(self.logfile, &#39;a&#39;) as log:
-            log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: exiting output saver\n&#39;)
+        if exc_type is not None:
+            with open(self.logfile, &#39;a&#39;) as log:
+                log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: exiting output saver with exception:\n&#39;)
+                print_exception(exc_type, exc_value, traceback, file=log)
+        else:
+            with open(self.logfile, &#39;a&#39;) as log:
+                log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: exiting output saver\n&#39;)
         return
 
     def save_imgs(self, imgs):
@@ -626,24 +630,17 @@ class Output_saver:
             self.save_img(img[None, :, :])
 
         elif img.ndim == 3:
-            if img.shape[0] in (1, 3, 4):
-                if not filename:
-                    filename = str(self.file_counter) + &#34;.tif&#34;
-                with open(self.logfile, &#39;a&#39;) as log:
-                    log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: start saving &#39; + subfolder + filename + &#39;\n&#39;)
-                im = Image.fromarray(img.swapaxes(0, 2).swapaxes(0, 1))
-                im.save(self.out_folder + subfolder + filename)
-                self.file_counter += 1
-                with open(self.logfile, &#39;a&#39;) as log:
-                    log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: finished saving &#39; + subfolder + filename + &#39;\n&#39;)
-            else:
-                with open(self.logfile, &#39;a&#39;) as log:
-                    log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: array with no. of channels other than 1, 3, or 4 will be stored as individual images\n&#39;)
-                try:
-                    os.mkdir(self.out_folder + str(self.file_counter) + &#39;\\&#39;)
-                except FileExistsError:
-                    raise FolderExistsError(&#39;folder already exists: &#39; + self.out_folder + str(self.file_counter) + &#39;\\&#39;)
-                [self.save_img(img[None, i, :, :], subfolder=str(self.file_counter) + &#39;\\&#39;, filename=str(i)) for i in range(img.shape[0])]
+
+            if not filename:
+                filename = str(self.file_counter) + &#34;.tif&#34;
+            with open(self.logfile, &#39;a&#39;) as log:
+                log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: start saving &#39; + subfolder + filename + &#39;\n&#39;)
+                
+            tifffile.imwrite(self.out_folder + subfolder + filename, img, dtype=img.dtype)
+            
+            self.file_counter += 1
+            with open(self.logfile, &#39;a&#39;) as log:
+                log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: finished saving &#39; + subfolder + filename + &#39;\n&#39;)
 
         else:
             with open(self.logfile, &#39;a&#39;) as log:
@@ -700,7 +697,7 @@ class Output_saver:
 
     def save(self, obj, filename=None):
         &#34;&#34;&#34;
-        Save arbitrary objects.
+        Save arbitrary (pickleable) objects.
 
         Parameters
         ----------
@@ -771,7 +768,7 @@ class Output_saver:
 <span>def <span class="ident">save</span></span>(<span>self, obj, filename=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Save arbitrary objects.</p>
+<div class="desc"><p>Save arbitrary (pickleable) objects.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>obj</code></strong> :&ensp;<code>object</code></dt>
@@ -787,7 +784,7 @@ class Output_saver:
 </summary>
 <pre><code class="python">def save(self, obj, filename=None):
     &#34;&#34;&#34;
-    Save arbitrary objects.
+    Save arbitrary (pickleable) objects.
 
     Parameters
     ----------
@@ -971,24 +968,17 @@ If not provided, a number will be assigned as file name.</dd>
         self.save_img(img[None, :, :])
 
     elif img.ndim == 3:
-        if img.shape[0] in (1, 3, 4):
-            if not filename:
-                filename = str(self.file_counter) + &#34;.tif&#34;
-            with open(self.logfile, &#39;a&#39;) as log:
-                log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: start saving &#39; + subfolder + filename + &#39;\n&#39;)
-            im = Image.fromarray(img.swapaxes(0, 2).swapaxes(0, 1))
-            im.save(self.out_folder + subfolder + filename)
-            self.file_counter += 1
-            with open(self.logfile, &#39;a&#39;) as log:
-                log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: finished saving &#39; + subfolder + filename + &#39;\n&#39;)
-        else:
-            with open(self.logfile, &#39;a&#39;) as log:
-                log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: array with no. of channels other than 1, 3, or 4 will be stored as individual images\n&#39;)
-            try:
-                os.mkdir(self.out_folder + str(self.file_counter) + &#39;\\&#39;)
-            except FileExistsError:
-                raise FolderExistsError(&#39;folder already exists: &#39; + self.out_folder + str(self.file_counter) + &#39;\\&#39;)
-            [self.save_img(img[None, i, :, :], subfolder=str(self.file_counter) + &#39;\\&#39;, filename=str(i)) for i in range(img.shape[0])]
+
+        if not filename:
+            filename = str(self.file_counter) + &#34;.tif&#34;
+        with open(self.logfile, &#39;a&#39;) as log:
+            log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: start saving &#39; + subfolder + filename + &#39;\n&#39;)
+            
+        tifffile.imwrite(self.out_folder + subfolder + filename, img, dtype=img.dtype)
+        
+        self.file_counter += 1
+        with open(self.logfile, &#39;a&#39;) as log:
+            log.write(time.strftime(&#39;%Y-%m-%d_%H-%M-%S&#39;) + &#39;: finished saving &#39; + subfolder + filename + &#39;\n&#39;)
 
     else:
         with open(self.logfile, &#39;a&#39;) as log:
